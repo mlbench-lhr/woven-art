@@ -1,3 +1,4 @@
+ "use client";
 import "@/app/globals.css";
 import { Inter } from "next/font/google";
 import { signOut } from "@/lib/auth/auth-helpers";

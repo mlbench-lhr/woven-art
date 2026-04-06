@@ -12,7 +12,7 @@ module.exports = {
         sans: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"],
       },
       colors: {
-        primary: "#B32053",
+        primary: "#C5B4A3",
         secondary: "#FFEAF4",
       },
       screens: {

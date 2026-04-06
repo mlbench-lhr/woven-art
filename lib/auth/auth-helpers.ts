@@ -1,12 +1,9 @@
 import api from "@/lib/api/axios-config";
-import { VendorDetails } from "../mongodb/models/User";
 
 export interface SignUpData {
   fullName: string;
   email: string;
-  phoneNumber: string;
   password: string;
-  vendorDetails?: VendorDetails;
 }
 
 export interface SignInData {
@@ -44,7 +41,6 @@ export const signIn = async (
   expectedRole?: "admin" | "vendor" | "user"
 ) => {
   try {
-    console.log("signIn called with email:", email, "and password:", password);
     const response = await api.post("/api/auth/signin", {
       email,
       password,
@@ -76,7 +72,7 @@ export const signInWithGoogle = async (
 ) => {
   try {
     if (redirectTo) {
-      const safe = redirectTo.startsWith("/") ? redirectTo : "/dashboard";
+      const safe = redirectTo.startsWith("/") ? redirectTo : "/";
       document.cookie = `post_login_redirect=${encodeURIComponent(safe)}; path=/; max-age=${5 * 60}; samesite=strict`;
     }
     if (expectedRole) {

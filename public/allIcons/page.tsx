@@ -39,7 +39,7 @@ export const BookingIcon = ({
   );
 };
 export const SendIcon = ({
-  color = "#B32053",
+  color = "#C5B4A3",
   size = "20",
 }: {
   color?: string;
@@ -136,7 +136,7 @@ export const PaymentIcon2 = ({
 };
 
 export const EasyListingIcon = ({
-  color = "#B32053",
+  color = "#C5B4A3",
   size = "18",
 }: {
   color?: string;
@@ -598,7 +598,7 @@ export const VendorIcon = ({
   );
 };
 export const VendorIcon2 = ({
-  color = "#B32053",
+  color = "#C5B4A3",
   size = "26",
 }: {
   color?: string;
@@ -628,7 +628,7 @@ export const VendorIcon2 = ({
   );
 };
 export const TravelerIcon = ({
-  color = "#B32053",
+  color = "#C5B4A3",
   size = "26",
 }: {
   color?: string;
@@ -655,7 +655,7 @@ export const TravelerIcon = ({
 };
 export const LocationIcon = ({
   size = "20",
-  color = "#B32053",
+  color = "#C5B4A3",
 }: {
   color?: string;
   size?: string;
@@ -677,7 +677,7 @@ export const LocationIcon = ({
     </svg>
   );
 };
-export const PhoneIcon = ({ color = "#B32053" }: { color?: string }) => {
+export const PhoneIcon = ({ color = "#C5B4A3" }: { color?: string }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -693,7 +693,7 @@ export const PhoneIcon = ({ color = "#B32053" }: { color?: string }) => {
     </svg>
   );
 };
-export const MailIcon = ({ color = "#B32053" }: { color?: string }) => {
+export const MailIcon = ({ color = "#C5B4A3" }: { color?: string }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -730,7 +730,7 @@ export const CancellationPolicyIcon = ({
   );
 };
 
-export const Vehicle2Icon = ({ color = "#B32053" }: { color?: string }) => {
+export const Vehicle2Icon = ({ color = "#C5B4A3" }: { color?: string }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

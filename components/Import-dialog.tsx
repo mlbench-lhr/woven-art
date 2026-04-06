@@ -101,8 +101,8 @@ export function ImportDialog({
             transition-all duration-200
             ${
               isDragging
-                ? "border-[#B32053] bg-[#B32053]/5"
-                : "border-gray-300 hover:border-[#B32053] hover:bg-gray-50"
+                ? "border-[#C5B4A3] bg-[#C5B4A3]/5"
+                : "border-gray-300 hover:border-[#C5B4A3] hover:bg-gray-50"
             }
           `}
         >
@@ -110,7 +110,7 @@ export function ImportDialog({
             <div className="text-gray-600">
               {selectedFile ? (
                 <div className="flex items-center gap-2 flex-col ">
-                  <Upload className="w-5 h-5 text-[#B32053]" />
+                  <Upload className="w-5 h-5 text-[#C5B4A3]" />
                   <span className="text-sm font-medium text-gray-900">
                     {selectedFile.name}
                   </span>

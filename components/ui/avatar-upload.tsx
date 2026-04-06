@@ -97,11 +97,11 @@ export function AvatarUpload({
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 {opportunity ? (
-                  <Sprout className="w-8 h-8 text-[#B32053]" />
+                  <Sprout className="w-8 h-8 text-[#C5B4A3]" />
                 ) : blog ? (
-                  <Trophy className="w-8 h-8 text-[#B32053]" />
+                  <Trophy className="w-8 h-8 text-[#C5B4A3]" />
                 ) : (
-                  <User className="w-8 h-8 text-[#B32053]" />
+                  <User className="w-8 h-8 text-[#C5B4A3]" />
                 )}
               </div>
             )}

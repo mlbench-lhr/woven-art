@@ -43,14 +43,14 @@ export const FavoriteButton = ({ _id }: FavoriteButtonProps) => {
     <>
       {isFavorite ? (
         <div
-          className="bg-[#B32053] h-[26px] w-[26px] rounded-[6px] flex justify-center items-center cursor-pointer"
+          className="bg-[#C5B4A3] h-[26px] w-[26px] rounded-[6px] flex justify-center items-center cursor-pointer"
           onClick={() => {
             Swal.fire({
               title: "Remove Favorite",
               text: "Are you sure you want to remove this from Favorites?",
               icon: "warning",
               showCancelButton: true,
-              confirmButtonColor: "#B32053",
+              confirmButtonColor: "#C5B4A3",
               cancelButtonColor: "#d33",
               confirmButtonText: "Remove",
             }).then((result) => {
@@ -69,7 +69,7 @@ export const FavoriteButton = ({ _id }: FavoriteButtonProps) => {
             handleFavoritesUpdate(true, _id);
           }}
         >
-          <HeartIcon color="#B32053" />
+          <HeartIcon color="#C5B4A3" />
         </div>
       )}
     </>

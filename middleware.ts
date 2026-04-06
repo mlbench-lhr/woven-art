@@ -22,9 +22,12 @@ export async function middleware(request: NextRequest) {
 
   const isLoggedIn = !!token;
 
-  // If logged in and visiting any auth route
+  if (pathname === "/") {
+    return NextResponse.next();
+  }
+
   if (isLoggedIn && isAuthRoute) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   // Not logged in → protected route access

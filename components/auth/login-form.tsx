@@ -119,7 +119,7 @@ export function LoginForm({
             title: "Verification Error",
             text: "You need to verify your email — resend code?",
             icon: "error",
-            confirmButtonColor: "#B32053",
+            confirmButtonColor: "#C5B4A3",
             confirmButtonText: "Resend OTP",
           }).then(async (result) => {
             if (result.isConfirmed) {
@@ -130,7 +130,7 @@ export function LoginForm({
         }
         setError(error.message);
       } else {
-        router.push(redirectTo || "/dashboard");
+        router.push(redirectTo || "/");
         router.refresh();
       }
     } catch (err) {
@@ -146,7 +146,7 @@ export function LoginForm({
 
     try {
       const expectedRole = "user";
-      const { error } = await signInWithGoogle(redirectTo || "/dashboard", expectedRole);
+      const { error } = await signInWithGoogle(redirectTo || "/", expectedRole);
       if (error) {
         setError(error.message);
       }
@@ -281,7 +281,7 @@ export function LoginForm({
           <div className="flex items-center justify-between plan-text-style-3">
             <Link
               href={"/auth/forgot-password"}
-              className="text-[#B32053] hover:underline w-full text-end"
+              className="text-[#C5B4A3] hover:underline w-full text-end"
             >
               Forgot Password?
             </Link>
@@ -323,7 +323,7 @@ export function LoginForm({
               Don&apos;t have an account?{" "}
               <Link
                 href={"/auth/signup"}
-                className="text-[#B32053] font-[500] hover:underline"
+                className="text-[#C5B4A3] font-[500] hover:underline"
               >
                 Sign Up
               </Link>

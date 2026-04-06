@@ -13,7 +13,6 @@ const signupSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  phoneNumber: z.string(),
 });
 
 export async function POST(request: NextRequest) {
@@ -34,17 +33,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists by phoneNumber
-    const existingUserByPhone = await User.findOne({
-      phoneNumber: validatedData.phoneNumber,
-    });
-    if (existingUserByPhone) {
-      return NextResponse.json(
-        { error: "User with this phoneNumber number already exists" },
-        { status: 400 }
-      );
-    }
-
     // Hash password
     const hashedPassword = await hashPassword(validatedData.password);
 
@@ -56,7 +44,6 @@ export async function POST(request: NextRequest) {
       email: validatedData.email,
       password: hashedPassword,
       fullName: validatedData.fullName,
-      phoneNumber: validatedData.phoneNumber,
       isEmailVerified: false,
       emailVerificationOTP: emailVerificationOTP,
       emailVerificationOTPExpires: emailVerificationOTPExpires,

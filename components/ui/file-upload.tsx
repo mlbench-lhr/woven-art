@@ -156,7 +156,7 @@ export function FileUpload({
               className="col-span-12 sm:col-span-12 lg:col-span-12 flex bg-[#D8E6DD] rounded-[8px] py-[8px] px-[16px] items-center justify-between"
             >
               <div className="flex items-center space-x-2">
-                <File className="w-4 h-4" color="#B32053" />{" "}
+                <File className="w-4 h-4" color="#C5B4A3" />{" "}
                 <span className="text-sm truncate max-w-[200px]">
                   {file.split("/").pop()}
                 </span>

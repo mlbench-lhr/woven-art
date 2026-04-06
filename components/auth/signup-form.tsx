@@ -13,16 +13,12 @@ import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { useForm, Controller } from "react-hook-form";
 import Swal from "sweetalert2";
-import { Checkbox } from "../ui/checkbox";
-import PhoneNumberInput from "../PhoneNumberInput";
 
 type SignupFormValues = {
   fullName: string;
   email: string;
-  phoneNumber: string;
   password: string;
   confirmPassword: string;
-  agreedToTerms: boolean;
 };
 
 export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redirectTo?: string }) {
@@ -43,10 +39,8 @@ export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redir
     defaultValues: {
       fullName: "",
       email: "",
-      phoneNumber: "",
       password: "",
       confirmPassword: "",
-      agreedToTerms: false,
     },
   });
 
@@ -61,7 +55,6 @@ export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redir
       const signupData = {
         fullName: data.fullName,
         email: data.email,
-        phoneNumber: data.phoneNumber,
         password: data.password,
       };
 
@@ -72,7 +65,7 @@ export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redir
         if (res?.requiresVerification) {
           setSuccess(true);
         } else {
-          router.push("/dashboard");
+          router.push("/");
         }
       }
     } catch (err) {
@@ -196,31 +189,7 @@ export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redir
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label className="label-style">Phone Number</Label>
-            <Controller
-              name="phoneNumber"
-              control={control}
-              rules={{
-                required: "Phone number is required",
-                pattern: {
-                  value: /^\+?[1-9]\d{1,14}$/,
-                  message: "Enter a valid phoneNumber number",
-                },
-              }}
-              render={({ field }) => (
-                <PhoneNumberInput
-                  phoneNumber={field.value}
-                  setPhoneNumber={field.onChange}
-                />
-              )}
-            />
-            {errors.phoneNumber && (
-              <p className="text-red-500 text-sm">
-                {errors.phoneNumber.message}
-              </p>
-            )}
-          </div>
+          
 
           <div className="space-y-2">
             <Label className="label-style" htmlFor="password">
@@ -321,55 +290,7 @@ export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redir
             {errorMsg && <p className="text-red-500 text-sm">{errorMsg}</p>}
           </div>
 
-          <div>
-            <div className="flex items-start justify-start space-x-2">
-              <Controller
-                name="agreedToTerms"
-                control={control}
-                rules={{
-                  required: "You must agree to the terms and conditions",
-                }}
-                render={({ field }) => (
-                  <Checkbox
-                    id="agreedToTerms"
-                    className="mt-1"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                )}
-              />
-              <Label htmlFor="agreedToTerms">
-                <span className="text-sm font-medium leading-5">
-                  I have read and agree to the{" "}
-                  <Link
-                    href={"/privacy-policy"}
-                    className="text-[#B32053] underline hover:no-underline"
-                  >
-                    KVKK Personal Data Protection Policy{" "}
-                  </Link>
-                  and{" "}
-                  <Link
-                    href={"/terms-and-conditions"}
-                    className="text-[#B32053] underline hover:no-underline"
-                  >
-                    Terms & Conditions{" "}
-                  </Link>
-                  and{" "}
-                  <Link
-                    href={"/privacy-policy"}
-                    className="text-[#B32053] underline hover:no-underline"
-                  >
-                    Privacy Statement.
-                  </Link>
-                </span>
-              </Label>
-            </div>
-            {errors.agreedToTerms && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.agreedToTerms.message}
-              </p>
-            )}
-          </div>
+          
 
           <Button
             type="submit"
@@ -399,7 +320,7 @@ export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redir
 
         <div className="plan-text-style-3 text-center">
           Already have an account?{" "}
-          <Link href={"/auth/login"} className="text-[#B32053] font-[500] hover:underline">
+          <Link href={"/auth/login"} className="text-[#C5B4A3] font-[500] hover:underline">
             Login
           </Link>
         </div>

@@ -22,7 +22,7 @@ export default function HomePage() {
               Create stunning string art designs in a few clicks
             </p>
             <div className="mt-8">
-              <Link href="/dashboard">
+              <Link href="/">
                 <Button className="opp-button-4">Start Creating</Button>
               </Link>
             </div>

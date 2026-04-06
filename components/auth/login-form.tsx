@@ -130,7 +130,7 @@ export function LoginForm({
         }
         setError(error.message);
       } else {
-        router.push(redirectTo || "/dashboard");
+        router.push(redirectTo || "/");
         router.refresh();
       }
     } catch (err) {
@@ -146,7 +146,7 @@ export function LoginForm({
 
     try {
       const expectedRole = "user";
-      const { error } = await signInWithGoogle(redirectTo || "/dashboard", expectedRole);
+      const { error } = await signInWithGoogle(redirectTo || "/", expectedRole);
       if (error) {
         setError(error.message);
       }

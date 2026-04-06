@@ -65,7 +65,7 @@ export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redir
         if (res?.requiresVerification) {
           setSuccess(true);
         } else {
-          router.push("/dashboard");
+          router.push("/");
         }
       }
     } catch (err) {

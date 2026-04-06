@@ -72,7 +72,7 @@ export const signInWithGoogle = async (
 ) => {
   try {
     if (redirectTo) {
-      const safe = redirectTo.startsWith("/") ? redirectTo : "/dashboard";
+      const safe = redirectTo.startsWith("/") ? redirectTo : "/";
       document.cookie = `post_login_redirect=${encodeURIComponent(safe)}; path=/; max-age=${5 * 60}; samesite=strict`;
     }
     if (expectedRole) {

@@ -26,7 +26,7 @@ export default function AuthCallbackPage() {
         .split("; ")
         .find((row) => row.startsWith("post_login_redirect="))
         ?.split("=")[1];
-      const redirect = cookie ? decodeURIComponent(cookie) : "/dashboard";
+      const redirect = cookie ? decodeURIComponent(cookie) : "/";
       document.cookie =
         "post_login_redirect=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       router.push(redirect);

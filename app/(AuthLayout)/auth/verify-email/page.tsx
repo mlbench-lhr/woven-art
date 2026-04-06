@@ -16,6 +16,7 @@ import { CheckCircle, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import Swal from "sweetalert2"; // ✅ use SweetAlert2
 import { AuthLayoutProvider } from "../../AuthLayoutProvider";
+import Image from "next/image";
 
 export default function VerifyEmailPage() {
   const [otp, setOtp] = useState("");
@@ -208,6 +209,9 @@ export default function VerifyEmailPage() {
     <AuthLayoutProvider>
       <Card className="w-full max-w-md auth-box-shadows">
         <CardHeader className="space-y-1">
+          <Link href={"/"}>
+            <Image src={"/logo.png"} width={100} height={20} alt="" />
+          </Link>
           <CardTitle className="text-center">Email Verification</CardTitle>
           <CardDescription className="text-center">
             Check your email and enter the OTP to verify.
@@ -239,7 +243,7 @@ export default function VerifyEmailPage() {
               <button
                 onClick={handleResendOtp}
                 disabled={resendTimer > 0 || resendLoading || !email}
-                className="text-[#B32053] font-[500] hover:underline"
+                className="text-[#C5B4A3] font-[500] hover:underline"
               >
                 {resendLoading
                   ? "Sending..."

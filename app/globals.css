@@ -10,7 +10,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #b32053;
+  --primary: #C5B4A3;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: #ffeaf4;
   --secondary-foreground: oklch(0.205 0 0);
@@ -145,14 +145,14 @@ html {
 .primary-button {
   color: white;
   text-align: center;
-  background-color: #b32053;
+  background-color: #C5B4A3;
   font-style: normal;
   font-weight: 500;
   line-height: 0px;
   letter-spacing: 0.08px;
   cursor: pointer;
   border-radius: 8px;
-  background: var(--Schemes-Primary-Container, #b32053);
+  background: var(--Schemes-Primary-Container, #C5B4A3);
 }
 
 .green-secondary-button {
@@ -164,8 +164,8 @@ html {
   gap: var(--Components-Button-Gap-Between, 10px);
   cursor: pointer;
   border-radius: 8px;
-  border: 1px solid var(--Schemes-Primary-Container, #b32053);
-  color: var(--Schemes-Primary-Container, #b32053);
+  border: 1px solid var(--Schemes-Primary-Container, #C5B4A3);
+  color: var(--Schemes-Primary-Container, #C5B4A3);
   text-align: center;
   font-style: normal;
   font-weight: 500;
@@ -243,7 +243,7 @@ html {
   letter-spacing: 0.5px;
 }
 .plan-text-style-2-green {
-  color: #b32053;
+  color: #C5B4A3;
   text-align: center;
 
   /* material-theme/body/large */
@@ -337,7 +337,7 @@ html {
   letter-spacing: 0.08px;
 }
 .card-number-text {
-  color: var(--Schemes-Primary, #b32053);
+  color: var(--Schemes-Primary, #C5B4A3);
 
   /* material-theme/display/large */
 
@@ -376,7 +376,7 @@ body {
   border-radius: 8px;
   border: 6px solid var(--Schemes-Surface-Container-Lowest, #fff);
   background: linear-gradient(180deg, rgba(189, 237, 219, 0) 0%, #bdeddb 100%),
-    linear-gradient(180deg, #b32053 0%, rgba(90, 210, 166, 0) 100%);
+    linear-gradient(180deg, #C5B4A3 0%, rgba(90, 210, 166, 0) 100%);
   background-blend-mode: normal, normal;
 }
 .rounded-icon {
@@ -445,9 +445,8 @@ body {
 
 .auth-box-shadows {
   border-radius: 12px;
-  border: 2px solid rgba(0, 0, 0, 0.07);
-  background: #fff;
-  box-shadow: 0 7px 35.5px 0 rgba(0, 0, 0, 0.05);
+  border: 0px solid rgba(0, 0, 0, 0.07);
+  box-shadow: none;
 }
 
 .box-shadows-2 {
@@ -490,7 +489,7 @@ button {
 .Easy,
 .Medium {
   background-color: #f5fbf5;
-  color: #b32053;
+  color: #C5B4A3;
 }
 
 .opp-button-1 {
@@ -564,7 +563,7 @@ button {
   align-items: center;
   gap: var(--Utilities-Spacing-2, 8px);
   border-radius: var(--Components-Button-Border-Radius, 8px);
-  background: var(--Schemes-Primary-Container, #b32053);
+  background: var(--Schemes-Primary-Container, #C5B4A3);
   color: var(--Schemes-On-Primary-Container, white);
   text-align: center;
 
@@ -638,7 +637,7 @@ button {
     letter-spacing: 0.25px;
   }
   .plan-text-style-2-green {
-    color: #b32053;
+    color: #C5B4A3;
     text-align: start;
 
     /* material-theme/body/medium */
@@ -657,7 +656,7 @@ button {
     line-height: 32px;
   }
   .card-number-text {
-    color: var(--Schemes-Primary, #b32053);
+    color: var(--Schemes-Primary, #C5B4A3);
 
     /* material-theme/display/smallx */
     font-size: 40px;
@@ -702,14 +701,14 @@ button {
   .primary-button {
     color: white;
     text-align: center;
-    background-color: #b32053;
+    background-color: #C5B4A3;
     font-style: normal;
     font-weight: 500;
     line-height: 0px;
     letter-spacing: 0.08px;
     cursor: pointer;
     border-radius: 8px;
-    background: var(--Schemes-Primary-Container, #b32053);
+    background: var(--Schemes-Primary-Container, #C5B4A3);
   }
   .section-box-1 {
     border-radius: 16px;
@@ -743,7 +742,7 @@ button {
 .user {
   color: white;
   border-radius: 0 10px 10px 10px;
-  background: var(--Schemes-Primary, #b32053);
+  background: var(--Schemes-Primary, #C5B4A3);
   align-self: self-end;
 }
 .loader-border {
@@ -843,7 +842,7 @@ button {
 }
 
 .fc .fc-day-today .fc-daygrid-day-number {
-  background-color: #b32053 !important;
+  background-color: #C5B4A3 !important;
 }
 .fc-event.event-4DB6AC {
   background-color: rgba(77, 182, 172, 0.5) !important;
@@ -947,7 +946,7 @@ button {
   width: 90% !important;
 }
 .swal2-confirm {
-  background-color: #b32053 !important;
+  background-color: #C5B4A3 !important;
   color: white;
   border-radius: 8px;
   width: 45% !important;
@@ -962,8 +961,8 @@ button {
   width: 45% !important;
 }
 .swal2-icon.swal2-warning {
-  color: #b32053 !important;
-  border-color: #b32053 !important;
+  color: #C5B4A3 !important;
+  border-color: #C5B4A3 !important;
   width: 60px;
   height: 60px;
 }
@@ -1019,7 +1018,7 @@ button {
 .done {
   padding: 8px 10px;
   border-radius: 60px;
-  color: #b32053;
+  color: #C5B4A3;
   background-color: rgba(0, 108, 79, 0.1);
 }
 .in_progress,

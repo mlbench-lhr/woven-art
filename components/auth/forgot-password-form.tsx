@@ -3,6 +3,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -227,6 +228,9 @@ export function ForgotPasswordForm({
     return (
       <Card className="w-full md:w-[480px] h-full md:h-[390px]">
         <CardHeader className="flex flex-col justify-center items-center">
+          <Link href={"/"}>
+            <Image src={"/logo.png"} width={100} height={20} alt="" />
+          </Link>
           <div className="h-[80px] w-[80px] flex justify-center items-center rounded-full bg-primary mt-[60px]">
             <Check className="text-primary h-[40px] w-[40px]" color="white" />
           </div>
@@ -247,11 +251,14 @@ export function ForgotPasswordForm({
     return (
       <Card className="w-full max-w-md auth-box-shadows">
         <CardHeader className="space-y-1">
+          <Link href={"/"}>
+            <Image src={"/logo.png"} width={100} height={20} alt="" />
+          </Link>
           <button
             onClick={() => setStep("otp")}
             className="text-sm text-muted-foreground hover:text-foreground flex items-start justify-start mb-[28px]"
           >
-            <ChevronLeft className="mr-2 h-[24px] w-[24px]" color="#B32053" />
+            <ChevronLeft className="mr-2 h-[24px] w-[24px]" color="#C5B4A3" />
             <span className="text-base font-semibold">Go Back</span>
           </button>
           <CardTitle className="heading-text-style-4">Reset Password</CardTitle>
@@ -385,11 +392,14 @@ export function ForgotPasswordForm({
     return (
       <Card className="w-full max-w-md auth-box-shadows">
         <CardHeader className="space-y-1">
+          <Link href={"/"}>
+            <Image src={"/logo.png"} width={100} height={20} alt="" />
+          </Link>
           <button
             onClick={() => setStep("email")}
             className="text-sm text-muted-foreground hover:text-foreground flex items-start justify-start mb-[28px]"
           >
-            <ChevronLeft className="mr-2 h-[24px] w-[24px]" color="#B32053" />
+            <ChevronLeft className="mr-2 h-[24px] w-[24px]" color="#C5B4A3" />
             <span className="text-base font-semibold">Go Back</span>
           </button>
           <CardTitle className="heading-text-style-4 text-center">
@@ -422,7 +432,7 @@ export function ForgotPasswordForm({
               <button
                 onClick={handleResendOtp}
                 disabled={resendTimer > 0 || resendLoading}
-                className="text-[#B32053] font-[500] hover:underline"
+                className="text-[#C5B4A3] font-[500] hover:underline"
               >
                 {resendLoading
                   ? "Sending..."
@@ -440,11 +450,14 @@ export function ForgotPasswordForm({
   return (
     <Card className="w-full max-w-md auth-box-shadows">
       <CardHeader className="space-y-1">
+        <Link href={"/"}>
+          <Image src={"/logo.png"} width={100} height={20} alt="" />
+        </Link>
         <div
           onClick={() => router.back()}
           className="text-sm cursor-pointer text-muted-foreground hover:text-foreground flex items-center justify-start mb-[28px]"
         >
-          <ChevronLeft className="mr-2 h-[24px] w-[24px]" color="#B32053" />
+          <ChevronLeft className="mr-2 h-[24px] w-[24px]" color="#C5B4A3" />
           <span className="text-base font-semibold">Go Back</span>
         </div>
         <CardTitle className="heading-text-style-4">Forgot Password?</CardTitle>

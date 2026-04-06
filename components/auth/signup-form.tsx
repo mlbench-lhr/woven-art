@@ -320,7 +320,7 @@ export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redir
 
         <div className="plan-text-style-3 text-center">
           Already have an account?{" "}
-          <Link href={"/auth/login"} className="text-[#B32053] font-[500] hover:underline">
+          <Link href={"/auth/login"} className="text-[#C5B4A3] font-[500] hover:underline">
             Login
           </Link>
         </div>

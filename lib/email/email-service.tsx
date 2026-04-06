@@ -26,9 +26,9 @@ export const sendPasswordResetEmail = async (email: string, otp: string) => {
     <p>You requested a password reset for your account.</p>
     <p>Use the following OTP code to reset your password:</p>
     <div style="text-align: center; margin: 30px 0;">
-      <div style="background-color: #f8f9fa; border: 2px dashed #b32053; 
+      <div style="background-color: #f8f9fa; border: 2px dashed #C5B4A3; 
                   padding: 20px; border-radius: 10px; display: inline-block;">
-        <span style="font-size: 32px; font-weight: bold; color: #b32053; 
+        <span style="font-size: 32px; font-weight: bold; color: #C5B4A3; 
                      letter-spacing: 5px;">${otp}</span>
       </div>
     </div>
@@ -51,9 +51,9 @@ export const sendVerificationEmail = async (email: string, otp: string) => {
     <h2 style="color: #333;">Welcome! Please Verify Your Email</h2>
     <p>Thank you for signing up! Please verify your email address using the OTP code below:</p>
     <div style="text-align: center; margin: 30px 0;">
-      <div style="background-color: #f8f9fa; border: 2px dashed #b32053; 
+      <div style="background-color: #f8f9fa; border: 2px dashed #C5B4A3; 
                   padding: 20px; border-radius: 10px; display: inline-block;">
-        <span style="font-size: 32px; font-weight: bold; color: #b32053; 
+        <span style="font-size: 32px; font-weight: bold; color: #C5B4A3; 
                      letter-spacing: 5px;">${otp}</span>
       </div>
     </div>

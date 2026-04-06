@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import Swal from "sweetalert2";
 import { useAppDispatch } from "@/lib/store/hooks";
 import { setReduxUser } from "@/lib/store/slices/authSlice";
+import { useAuth } from "@/hooks/use-auth";
 
 type LoginFormValues = {
   email: string;
@@ -43,6 +44,7 @@ export function LoginForm({
   const router = useRouter();
   const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
+  const { refreshUser } = useAuth();
 
   const {
     control,
@@ -130,8 +132,8 @@ export function LoginForm({
         }
         setError(error.message);
       } else {
+        await refreshUser();
         router.push(redirectTo || "/");
-        router.refresh();
       }
     } catch (err) {
       setError("An unexpected error occurred");

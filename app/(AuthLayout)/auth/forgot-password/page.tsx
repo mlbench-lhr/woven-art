@@ -3,7 +3,7 @@ import { AuthLayoutProvider } from "../../AuthLayoutProvider";
 
 export default function ForgotPasswordPage() {
   return (
-    <AuthLayoutProvider showImage1={false}>
+    <AuthLayoutProvider>
       <ForgotPasswordForm />
     </AuthLayoutProvider>
   );

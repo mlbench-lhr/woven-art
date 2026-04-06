@@ -9,6 +9,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  outputFileTracingRoot: "/Users/mac/Desktop/woven art",
 };
 
 export default nextConfig;

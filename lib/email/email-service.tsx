@@ -1,12 +1,11 @@
 import { Resend } from "resend";
-const RESEND_API_KEY =
-  (process.env.RESEND_API_KEY as string) ||
-  "re_UnbMd7D2_NrJ4Kq9gbN3B8U2ceKHpu1HV";
+const RESEND_API_KEY = process.env.RESEND_API_KEY as string;
 const EMAIL_FROM = process.env.EMAIL_FROM || "onboarding@resend.dev";
-const resend = new Resend(RESEND_API_KEY);
 
 export const sendPasswordResetEmail = async (email: string, otp: string) => {
   try {
+    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
+    const resend = new Resend(RESEND_API_KEY);
     const htmlContent = `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
     <div style="text-align: center; margin-bottom: 20px; display:flex; justify-content:start; gap:10px; align-items:center">
@@ -52,6 +51,8 @@ export const sendNewReservationUserEmail = async (to: string, payload: {
   currency: string;
   link: string;
 }) => {
+  if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
+  const resend = new Resend(RESEND_API_KEY);
   const subject = `Reservation Created: #${payload.bookingId}`;
   const html = `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -86,6 +87,8 @@ export const sendNewReservationVendorEmail = async (to: string, payload: {
   currency: string;
   link: string;
 }) => {
+  if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
+  const resend = new Resend(RESEND_API_KEY);
   const subject = `New Reservation: #${payload.bookingId}`;
   const html = `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -114,6 +117,8 @@ export const sendNewReservationVendorEmail = async (to: string, payload: {
 
 export const sendVerificationEmail = async (email: string, otp: string) => {
   try {
+    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
+    const resend = new Resend(RESEND_API_KEY);
     const htmlContent = `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
     <div style="text-align: center; margin-bottom: 20px; display:flex; justify-content:start; gap:10px; align-items:center">

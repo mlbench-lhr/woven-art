@@ -1,0 +1,247 @@
+3.1 Generate Hash for Client Authentication
+Hash is the base64-encoded version of the hashed text which is generated with SHA1 algorithm.
+To generate the hash for client authentication, following values should be appended with the
+given order:
+plaintext = clientid + oid + amount + okurl + failurl + trantype + instalment + rnd + storekey ;
+
+If instalment parameter is used, it must be included in hash function.
+If instalment parameter is not used, then there is no need to include in hash function.
+For instalments the system presumes that frequency is monthly.
+
+8 | NestPay® | Merchant Integration 3D Pay Hosting
+rnd : It is a random parameter. Random string can be maximum 20 characters long.
+
+For example, for the given parameters:
+
+clientid : 990000000000001
+oid : 1291899411421
+amount : 91.96
+okurl : 
+failurl : 
+trantype : Auth
+instalment : 2
+rnd : asdf
+storekey : 123456
+Hash would be:
+
+plaintext = 990000000000001129189941142191.96
+
+Hash = Base64(SHA1(plaintext))
+
+3.2 Posting Hidden Parameters
+Mandatory input parameters are posted to NestPay Payment Gateway located at
+ as hidden parameters.
+
+clientid : Merchant ID (given by Nestpay)
+storetype : “3d_pay_hosting”
+hash : Hash value for client authentication
+trantype : "Auth"
+amount : transaction amount
+currency : ISO code of transaction currency (949 for TL)
+oid : Unique identifier of the order
+okUrl : The return URL to which NestPay Payment Gateway redirects the browser of the
+
+customer if transaction is completed successfully.
+
+failUrl : The return URL to which NestPay Payment Gateway redirects the browser of the
+
+customer if transaction is completed unsuccessfully.
+
+lang : Language of the payment pages hosted by NestPay ("tr" for Turkish, "en" for English)
+encoding : Page encoding
+Sample HTTP form with mandatory parameter set
+
+9 | NestPay® | Merchant Integration 3D Pay Hosting
+<form method="post" action="">
+<input type="hidden" name="clientid" value="990000000000001"/>
+<input type="hidden" name="storetype" value="3d_pay_hosting" />
+<input type="hidden" name="hash" value="iej6cPOjDd4IKqXWQEznXWqLzLI=" />
+<input type="hidden" name="trantype" value="Auth" />
+<input type="hidden" name="amount" value="91.96" />
+<input type="hidden" name="currency" value="949" />
+<input type="hidden" name="oid" value="1291899411421" />
+<input type="hidden" name="okUrl" value=""/>
+<input type="hidden" name="failUrl" value="" />
+<input type="hidden" name="lang" value="en" />
+<input type="hidden" name="rnd" value="asdf" />
+<input type="hidden" name="encoding" value="utf-8" />
+</form>
+
+
+4.1.1 Sample HTTP form with mandatory and optional parameters
+<form method="post" action="">
+<input type="hidden" name="clientid" value="990000000000001"/>
+<input type="hidden" name="storetype" value="3d_pay_hosting" />
+<input type="hidden" name="hash" value="iej6cPOjDd4IKqXWQEznXWqLzLI=" />
+<input type="hidden" name="trantype" value="Auth" />
+<input type="hidden" name="amount" value="91.96" />
+<input type="hidden" name="currency" value="949" />
+<input type="hidden" name="instalment" value="">
+<input type="hidden" name="oid" value="1291899411421" />
+<input type="hidden" name="okUrl" value="" />
+<input type="hidden" name="failUrl" value="" />
+<input type="hidden" name="lang" value="tr" />
+<input type="hidden" name="rnd" value="asdf" />
+<input type="hidden" name="tel" value="012345678">
+<input type="hidden" name="email" value="test@test.com">
+<!-- Billing Parameters [All Optional]-->
+<input type="hidden" name="BillToCompany" value="Billing Company">
+<input type="hidden" name="BillToName" value="Bill John Doe">
+<input type="hidden" name="BillToStreet1" value="Address line 1">
+<input type="hidden" name="BillToStreet2" value="Address line 2">
+<input type="hidden" name="BillToStreet3" value="Address line 3">
+<input type="hidden" name="BillToCity" value="Istanbul">
+<input type="hidden" name="BillToStateProv" value="mystate">
+<input type="hidden" name="BillToPostalCode" value="12345">
+
+12 | NestPay® | Merchant Integration 3D Pay Hosting
+<input type="hidden" name="BillToCountry" value="616">
+<!-- Shipping Parameters [All Optional]-->
+<input type="hidden" name="printBillTo" value="true">
+<input type="hidden" name="ShipToCompany" value="Shipping Company">
+<input type="hidden" name="ShipToName" value="Ship John Doe">
+<input type="hidden" name="ShipToStreet1" value="Address line 1">
+<input type="hidden" name="ShipToStreet2" value="Address line 2">
+<input type="hidden" name="ShipToStreet3" value="Address line 3">
+<input type="hidden" name="ShipToCity" value="Istanbul">
+<input type="hidden" name="ShipToStateProv" value="mystate">
+<input type="hidden" name="ShipToPostalCode" value="12345">
+<input type="hidden" name="ShipToCountry" value="616">
+
+<!-- Order Item Parameters [All Optional]-->
+<input type="hidden" name="printShipTo" value="true">
+<input type="hidden" name="ItemNumber1" value="a5">
+<input type="hidden" name="ProductCode1" value="a5">
+<input type="hidden" name="Qty1" value="3">
+<input type="hidden" name="Desc1" value="a5 desc">
+<input type="hidden" name="Id1" value="a5">
+<input type="hidden" name="Price1" value="6.25">
+<input type="hidden" name="Total1" value="7.50">
+<!—Recurring Payment [All Optional]-->
+<input type="hidden" name="RecurringPaymentNumber" value="6">
+<input type="hidden" name="RecurringFrequencyUnit" value="M">
+<input type="hidden" name="RecurringFrequency" value="1">
+</form>
+
+6.APPENDIX A: Gateway Parameters
+6.1 Mandatory Input Parameters
+Parameter Description Format
+clientid Merchant ID Maximum 15 characters
+storetype Merchant payment model Possible values: "pay_hosting",
+“3d_pay”, "3d", "3d_pay_hosting"
+trantype Transaction type Set to "Auth" for authorization,
+“PreAuth” for preauthorization
+amount amount transaction amount Use "." or "," as decimal
+separator, do not use grouping
+character
+
+currency ISO code of transaction currency ISO 4217 numeric currency code,
+
+3 digits
+
+oid Unique identifier of the order Maximum 64 characters
+okUrl The return URL to which NestPay
+redirects the customer if transaction is
+completed successfully.
+
+Example:
+
+
+failUrl The return URL to which NestPay
+redirects the customer if transaction is
+completed unsuccessfully.
+
+Example:
+
+
+lang Language of the payment pages
+
+hosted by NestPay
+
+"tr" for Turkish, "en" for English
+
+rnd Random string, will be used for hash
+
+comparison
+
+Fixed length, 20 characters
+
+hash Hash value for client authentication
+
+
+
+6.1 Mandatory Input Parameters
+Parameter Description Format
+clientid Merchant ID Maximum 15 characters
+storetype Merchant payment model Possible values: "pay_hosting",
+“3d_pay”, "3d", "3d_pay_hosting"
+trantype Transaction type Set to "Auth" for authorization,
+“PreAuth” for preauthorization
+amount amount transaction amount Use "." or "," as decimal
+separator, do not use grouping
+character
+
+currency ISO code of transaction currency ISO 4217 numeric currency code,
+
+3 digits
+
+oid Unique identifier of the order Maximum 64 characters
+okUrl The return URL to which NestPay
+redirects the customer if transaction is
+completed successfully.
+
+Example:
+http://www.test.com/ok.php
+
+failUrl The return URL to which NestPay
+redirects the customer if transaction is
+completed unsuccessfully.
+
+Example:
+http://www.test.com/fail.php
+
+lang Language of the payment pages
+
+hosted by NestPay
+
+"tr" for Turkish, "en" for English
+
+rnd Random string, will be used for hash
+
+comparison
+
+Fixed length, 20 characters
+
+hash Hash value for client authentication
+
+
+
+8.3 3D Gateway Errors
+3D gateway errors applicable only for internet integration.
+
+Code Description
+3D-1001 Card does not support 3D
+3D-1002 Wrong card data - Card no or CVV2
+3D-1003 Wrong card data - Expiry
+3D-1004 Wrong security code
+3D-1005 System error
+3D-1006 Wrong currency
+3D-1007 Merchant does not support this payment model
+3D-1008 Amount parameter is missing or in invalid format
+3D-1009 Merchant payment model is not 3D or PAY
+3D-1010 BIN is restricted to 3D
+3D-1011 PAN is missing or not merchant payment page
+3D-1012 Cards except Visa and MC do not support 3D
+3D-1013 DinersClub does not support 3D
+3D-1014 Payment Host is unavailable
+3D-1015 This order has been paid already
+3D-1016 Payment cannot be completed
+3D-1017 Choose a currency for the merchant
+
+57 | NestPay® | Merchant Integration API Manual
+3D-1018 Errors in merchant data
+3D-1019
+
+Unable to locate merchant URL for return, issuer ACS responds with an
+invalid PARes or system error
+3D-1020 Missing parameter: clientid

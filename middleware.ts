@@ -22,11 +22,8 @@ export async function middleware(request: NextRequest) {
 
   const isLoggedIn = !!token;
 
-  // Explicit root handling: redirect to dashboard if logged in, otherwise to login
   if (pathname === "/") {
-    return NextResponse.redirect(
-      new URL(isLoggedIn ? "/dashboard" : "/auth/login", request.url)
-    );
+    return NextResponse.next();
   }
 
   // If logged in and visiting any auth route

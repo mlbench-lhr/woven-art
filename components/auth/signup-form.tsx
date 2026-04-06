@@ -13,6 +13,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { useForm, Controller } from "react-hook-form";
 import Swal from "sweetalert2";
+import { useAuth } from "@/hooks/use-auth";
 
 type SignupFormValues = {
   fullName: string;
@@ -29,6 +30,7 @@ export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redir
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const router = useRouter();
+  const { refreshUser } = useAuth();
 
   const {
     control,
@@ -65,6 +67,7 @@ export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redir
         if (res?.requiresVerification) {
           setSuccess(true);
         } else {
+          await refreshUser();
           router.push("/");
         }
       }

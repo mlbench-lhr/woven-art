@@ -3,10 +3,12 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refreshUser } = useAuth();
 
   useEffect(() => {
     const token = searchParams.get("token");
@@ -29,6 +31,7 @@ export default function AuthCallbackPage() {
       const redirect = cookie ? decodeURIComponent(cookie) : "/";
       document.cookie =
         "post_login_redirect=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      refreshUser();
       router.push(redirect);
     } else {
       // No token, redirect to login

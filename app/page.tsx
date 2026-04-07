@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import Link from "next/link";
+import UploadImageGuideModal from "@/components/SmallComponents/UploadImageGuideModal";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,11 @@ export default function HomePage() {
               Create stunning string art designs in a few clicks
             </p>
             <div className="mt-8">
-              <Link href="/">
-                <Button className="opp-button-4">Start Creating</Button>
-              </Link>
+              <UploadImageGuideModal
+                triggerComponent={() => (
+                  <Button className="opp-button-4">Start Creating</Button>
+                )}
+              />
             </div>
           </div>
           <div className="relative flex items-center justify-center">

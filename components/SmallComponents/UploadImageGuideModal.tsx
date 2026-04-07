@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   Dialog,
@@ -15,24 +15,26 @@ import { CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 
 type Props = {
   triggerComponent?: React.ReactNode | React.ComponentType<any>;
+  autoOpen?: boolean;
 };
 
-export default function UploadImageGuideModal({ triggerComponent }: Props) {
+export default function UploadImageGuideModal({ triggerComponent, autoOpen }: Props) {
   const TriggerComponent = triggerComponent as any;
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (autoOpen) setOpen(true);
+  }, [autoOpen]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        className="w-full"
-        onClick={() => setOpen(true)}
-      >
-        {TriggerComponent
-          ? typeof TriggerComponent === "function"
-            ? <TriggerComponent />
-            : TriggerComponent
-          : null}
-      </DialogTrigger>
+      {TriggerComponent ? (
+        <DialogTrigger
+          className="w-full"
+          onClick={() => setOpen(true)}
+        >
+          {typeof TriggerComponent === "function" ? <TriggerComponent /> : TriggerComponent}
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="sm:max-w-[720px]">
         <DialogTitle>What Image Should I Use?</DialogTitle>
         <DialogDescription>

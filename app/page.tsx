@@ -1,11 +1,12 @@
 "use client";
 import Image from "next/image";
-import UploadImageGuideModal from "@/components/SmallComponents/UploadImageGuideModal";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
+  const router = useRouter();
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
@@ -22,11 +23,7 @@ export default function HomePage() {
               Create stunning string art designs in a few clicks
             </p>
             <div className="mt-8">
-              <UploadImageGuideModal
-                triggerComponent={() => (
-                  <Button className="opp-button-4">Start Creating</Button>
-                )}
-              />
+              <Button className="opp-button-4" onClick={() => router.push("/create")}>Start Creating</Button>
             </div>
           </div>
           <div className="relative flex items-center justify-center">

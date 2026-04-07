@@ -56,9 +56,15 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Create new user
+      const fullNameClean = [googleUser.given_name, googleUser.family_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
       user = new User({
         email: emailLower,
-        fullName: googleUser.given_name + googleUser.family_name,
+        fullName: fullNameClean,
+        firstName: googleUser.given_name || "",
+        lastName: googleUser.family_name || "",
         googleId: googleUser.id,
         avatar: googleUser.picture,
         isEmailVerified: googleUser.verified_email,

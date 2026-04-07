@@ -10,12 +10,24 @@ import { useRouter } from "next/navigation";
 
 export default function SelectVariantPage() {
   const router = useRouter();
-  const { variants } = useVariants();
+  const { variants, setVariants } = useVariants();
   const [selected, setSelected] = useState<string | null>(null);
 
   useEffect(() => {
     if (variants.length > 0 && !selected) setSelected(variants[0].id);
   }, [variants, selected]);
+
+  useEffect(() => {
+    if (variants.length === 0) {
+      try {
+        const raw = sessionStorage.getItem("stringArtVariants");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) setVariants(parsed);
+        }
+      } catch {}
+    }
+  }, [variants.length, setVariants]);
 
   const current = variants.find((v) => v.id === selected);
 
@@ -66,7 +78,12 @@ export default function SelectVariantPage() {
             </Button>
             <Button
               className="opp-button-4"
-              onClick={() => router.push(`/create/artwork?variant=${encodeURIComponent(selected || "")}`)}
+              onClick={() => {
+                try {
+                  if (selected) sessionStorage.setItem("selectedVariantId", selected);
+                } catch {}
+                router.push(`/create/artwork?variant=${encodeURIComponent(selected || "")}`);
+              }}
               disabled={!selected}
             >
               Create Artwork

@@ -6,6 +6,7 @@
     totalPins: number
     totalLines: number
     finalSequence: number[] | null
+    unlocked?: boolean
     createdAt: Date
     }
 
@@ -15,6 +16,7 @@
     totalPins: { type: Number, default: 240 },
     totalLines: { type: Number, required: true },
     finalSequence: { type: [Number], default: null },
+    unlocked: { type: Boolean, default: false },
     createdAt: { type: Date, default: () => new Date() },
     })
 

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/auth-helpers";
 import connectDB from "@/lib/mongodb/connection";
 import { StringArt } from "@/lib/mongodb/models/StringArt";
+import { verifyToken } from "@/lib/auth/jwt";
+import User from "@/lib/mongodb/models/User";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,21 +17,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data, error } = await getCurrentUser();
-
-    console.log(data, error);
-
-    // if (error || !data?.user) {
-    //   return NextResponse.json(
-    //     { error: "Unauthorized" },
-    //     { status: 401 }
-    //   );
-    // }
+    // Authenticate from cookie
+    const token = req.cookies.get("auth_token")?.value;
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const payload = verifyToken(token);
 
     await connectDB();
 
+    const user = await User.findById(payload.userId);
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
     const stringArt = await StringArt.create({
-      userId: data.user._id.toString(),
+      userId: user._id.toString(),
       totalPins: 240,
       totalLines,
       finalSequence: sequence,
@@ -40,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       id: stringArt._id,
-    });
+    }, { status: 201 });
   } catch (err) {
     console.error("SAVE STRING ART ERROR:", err);
     return NextResponse.json(

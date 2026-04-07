@@ -5,6 +5,7 @@ export interface User {
   _id?: string;
   id: string;
   email: string;
+  credits?: number;
   currencyPreference?: string;
   firstName?: string;
   lastName?: string;

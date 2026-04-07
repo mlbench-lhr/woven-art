@@ -33,6 +33,7 @@ export default function Navbar() {
           <Link href="#">Shop Credits</Link>
           <Link href="#">FAQ</Link>
           <Link href="#">Contact</Link>
+          {user && <Link href="/dashboard/artworks">My Artworks</Link>}
         </nav>
         <div className="flex items-center gap-3">
           {user ? (
@@ -48,6 +49,9 @@ export default function Navbar() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => router.push("/")}>
                   Home
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/dashboard/artworks")}>
+                  My Artworks
                 </DropdownMenuItem>
                 <DropdownMenuItem variant="destructive" onClick={handleLogout}>
                   Logout

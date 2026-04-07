@@ -8,7 +8,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "sonner";
 import { ReduxProvider } from "@/components/providers/redux-provider";
 import LoadingScreen from "@/components/Skeletons/LoadingScreen";
-import { VariantsProvider } from "./Context/VariantsContext";
+import { VariantsProvider } from "@/app/Context/VariantsContext";
 
 
 export const metadata: Metadata = {

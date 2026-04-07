@@ -39,6 +39,10 @@ export default function CreatePage() {
       ];
 
       setVariants(variants);
+      try {
+        sessionStorage.setItem("stringArtVariants", JSON.stringify(variants));
+        if (preview) sessionStorage.setItem("stringArtPreview", preview);
+      } catch {}
       router.push("/create/variant");
     } catch (err) {
       console.error(err);

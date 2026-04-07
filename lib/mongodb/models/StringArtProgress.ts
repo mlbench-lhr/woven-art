@@ -17,4 +17,6 @@ export const StringArtProgressSchema = new Schema<IStringArtProgress>({
     updatedAt: { type: Date, default: () => new Date() }
 })
 
-export const StringArtProgress = mongoose.model<IStringArtProgress>('StringArtProgress', StringArtProgressSchema)
+export const StringArtProgress =
+  mongoose.models.StringArtProgress ??
+  mongoose.model<IStringArtProgress>('StringArtProgress', StringArtProgressSchema)

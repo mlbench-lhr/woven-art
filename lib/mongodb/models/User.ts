@@ -1,5 +1,5 @@
 import { LocationData } from "@/components/map";
-import mongoose, { type Document, Schema } from "mongoose";
+import mongoose, { type Document, Schema, type HydratedDocument } from "mongoose";
 
 export interface VendorDetails {
   confirmPassword?: string;
@@ -29,10 +29,11 @@ export interface VendorDetails {
 
 export interface IUser extends Document {
   role: "admin" | "user" | "vendor";
-  _id: string;
+  _id: mongoose.Types.ObjectId;
   email: string;
   password: string;
   phoneNumber: string;
+  credits?: number;
   currencyPreference?: string;
   firstName?: string;
   lastName?: string;
@@ -52,7 +53,7 @@ export interface IUser extends Document {
   googleId?: string;
   createdAt: Date;
   updatedAt: Date;
-  profileUpdated: Boolean;
+  profileUpdated: boolean;
   vendorDetails: VendorDetails;
   favorites: string[];
   notificationPreferences?: Record<string, boolean>;
@@ -74,7 +75,7 @@ const UserSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: function () {
+      required: function (this: HydratedDocument<IUser>) {
         return !this.googleId;
       },
     },
@@ -116,6 +117,7 @@ const UserSchema = new Schema<IUser>(
     dataUpdated: { type: Boolean, default: false },
     profileUpdated: { type: Boolean },
     currencyPreference: { type: String, default: "usd" },
+    credits: { type: Number, default: 0 },
     vendorDetails: {
       type: {
         cover: { type: String },
@@ -147,7 +149,7 @@ const UserSchema = new Schema<IUser>(
           total: { type: Number, default: 0 },
         },
       },
-      required: function () {
+      required: function (this: HydratedDocument<IUser>) {
         return this.role === "vendor";
       },
       default: null,

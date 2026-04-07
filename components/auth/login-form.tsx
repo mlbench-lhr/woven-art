@@ -108,6 +108,7 @@ export function LoginForm({
 
     try {
       const expectedRole = "user";
+      const targetRedirect = redirectTo || (searchParams.get("redirect") || "/");
       const { data: userData, error } = await signIn(
         data.email,
         data.password,
@@ -133,7 +134,7 @@ export function LoginForm({
         setError(error.message);
       } else {
         await refreshUser();
-        router.push(redirectTo || "/");
+        router.push(targetRedirect);
       }
     } catch (err) {
       setError("An unexpected error occurred");
@@ -148,7 +149,8 @@ export function LoginForm({
 
     try {
       const expectedRole = "user";
-      const { error } = await signInWithGoogle(redirectTo || "/", expectedRole);
+      const targetRedirect = redirectTo || (searchParams.get("redirect") || "/");
+      const { error } = await signInWithGoogle(targetRedirect, expectedRole);
       if (error) {
         setError(error.message);
       }

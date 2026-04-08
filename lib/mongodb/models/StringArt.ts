@@ -7,6 +7,7 @@
     totalLines: number
     finalSequence: number[] | null
     unlocked?: boolean
+    clientRequestId?: string | null
     createdAt: Date
     }
 
@@ -17,6 +18,7 @@
     totalLines: { type: Number, required: true },
     finalSequence: { type: [Number], default: null },
     unlocked: { type: Boolean, default: false },
+    clientRequestId: { type: String, default: null, index: true },
     createdAt: { type: Date, default: () => new Date() },
     })
 

@@ -23,17 +23,16 @@ export default function Navbar() {
 
   return (
     <header className="w-full">
-      <div className="max-w-[1200px] mx-auto px-6 py-6 flex items-center justify-between">
+      <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <Image src="/logo.png" alt="Woven Art" width={110} height={24} />
         </Link>
         <nav className="hidden md:flex items-center gap-10 navbar-text">
           <Link href="/">Create Artwork</Link>
-          <Link href="#">Shop Woven-Art kit</Link>
-          <Link href="#">Shop Credits</Link>
-          <Link href="#">FAQ</Link>
+          <Link target="_blank" href="https://wovenart.store/products/woven-art?variant=53231967076616">Shop Woven-Art kit</Link>
+          <Link target="_blank" href="https://wovenart.store/products/new-codes">Shop Credits</Link>
+          <Link href="/faq">FAQ</Link>
           <Link href="#">Contact</Link>
-          {user && <Link href="/dashboard/artworks">My Artworks</Link>}
         </nav>
         <div className="flex items-center gap-3">
           {user ? (
@@ -59,9 +58,9 @@ export default function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="hidden md:flex items-center gap-3">
-              <Link href="/auth/signup" className="green-secondary-button">Sign Up</Link>
-              <Link href="/auth/login" className="opp-button-4">Log In</Link>
+            <div className="hidden md:flex items-center gap-8">
+              <Link href="/auth/signup" className="text-[16px] font-medium text-[#171d1a]">Sign Up</Link>
+              <Link href="/auth/login" className="opp-button-4 px-6 rounded-xl">Log In</Link>
             </div>
           )}
         </div>

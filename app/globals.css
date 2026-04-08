@@ -76,7 +76,8 @@
 
 /* ✅ Use Inter instead of Geist */
 @theme inline {
-  --font-sans: var(--font-inter); /* ✅ use Inter */
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-heading);
   --font-mono: var(--font-geist-mono); /* keep mono as Geist if you want */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -363,7 +364,15 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 body {
-  font-family: var(--font-inter), Inter, system-ui, sans-serif !important;
+  font-family: var(--font-body), system-ui, sans-serif !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), ui-serif, Georgia, serif;
+}
+
+button, input, textarea, select {
+  font-family: inherit;
 }
 .logo-gradient {
   display: flex;
@@ -1176,7 +1185,7 @@ button {
   /* h1 */
   -webkit-text-stroke-width: 1px;
   -webkit-text-stroke-color: #000;
-  font-family: Inter;
+  font-family: var(--font-heading), ui-serif, Georgia, serif;
   font-size: 26px;
   font-style: normal;
   font-weight: 600;

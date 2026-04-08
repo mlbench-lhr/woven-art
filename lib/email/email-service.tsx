@@ -68,3 +68,28 @@ export const sendVerificationEmail = async (email: string, otp: string) => {
     html: htmlContent,
   });
 };
+
+export const sendInstructionCodeEmail = async (email: string, code: string, credits: number) => {
+  const transporter = getTransporter();
+  const htmlContent = `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #333;">Your Instruction Code</h2>
+    <p>Thanks for your purchase. Use the code below to add ${credits} credits to your account.</p>
+    <div style="text-align: center; margin: 30px 0;">
+      <div style="background-color: #f8f9fa; border: 2px dashed #C5B4A3;
+                  padding: 20px; border-radius: 10px; display: inline-block;">
+        <span style="font-size: 32px; font-weight: bold; color: #C5B4A3;
+                     letter-spacing: 5px;">${code}</span>
+      </div>
+    </div>
+    <p style="color: #666; font-size: 14px;">
+      Enter this code in the “Instruction Code” popup inside your dashboard.
+    </p>
+  </div>`;
+  await transporter.sendMail({
+    from: EMAIL_FROM,
+    to: email,
+    subject: "Your Woven Art Instruction Code",
+    html: htmlContent,
+  });
+};

@@ -6,14 +6,13 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { useVariants } from "@/app/Context/VariantsContext";
-import { generateStringArt } from "@/lib/stringArtGenerator"; // existing function
+import UploadImageGuideModal from "@/components/SmallComponents/UploadImageGuideModal";
 
 export default function CreatePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const { setVariants } = useVariants();
-  const [loading, setLoading] = useState(false);
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith("image/")) return;
@@ -24,44 +23,18 @@ export default function CreatePage() {
 
   const handleNext = async () => {
     if (!preview) return;
-    setLoading(true);
-
-
-    // Prepare cropped ImageData
     try {
-      const imageData = await prepareImage(preview, 360);
-      const TOTAL_PINS = 240;
-
-      const variants = [
-        runVariant(imageData, 2700, 0, "v1", TOTAL_PINS),
-        runVariant(imageData, 3300, 61, "v2", TOTAL_PINS),
-        runVariant(imageData, 3500, 137, "v3", TOTAL_PINS),
-      ];
-
-      setVariants(variants);
-      try {
-        sessionStorage.setItem("stringArtVariants", JSON.stringify(variants));
-        if (preview) sessionStorage.setItem("stringArtPreview", preview);
-      } catch {}
-      router.push("/create/variant");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      sessionStorage.setItem("stringArtPreview", preview);
+    } catch {}
+    setVariants([] as any);
+    router.push("/create/variant");
 
   };
 
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      {
-        loading && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="w-24 h-24 border-4 border-gray-300 border-t-[#C5B4A3] rounded-full animate-spin" />
-          </div>
-        )
-      }
+      <UploadImageGuideModal autoOpen />
       <Navbar />
       <main className="flex-1">
         <div className="max-w-[800px] mx-auto px-6 py-12 flex flex-col items-center">
@@ -107,38 +80,4 @@ export default function CreatePage() {
   );
 }
 
-// ----- helper functions -----
-async function prepareImage(src: string, size = 360): Promise<ImageData> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject("Canvas context not available");
-
-      // Center crop
-      const minSide = Math.min(img.width, img.height);
-      const sx = (img.width - minSide) / 2;
-      const sy = (img.height - minSide) / 2;
-      ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
-
-      resolve(ctx.getImageData(0, 0, size, size));
-    };
-    img.onerror = reject;
-    img.src = src;
-  });
-}
-
-function runVariant(
-  imageData: ImageData,
-  lines: number,
-  seed: number,
-  id: string,
-  totalPins: number
-) {
-  const sequence = generateStringArt({ imageData, totalPins, totalLines: lines, seed });
-  return { id, lines, seed, sequence };
-}
+// Generation moved to /create/variant for progressive preview.

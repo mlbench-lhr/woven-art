@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const { totalLines, sequence, thumbnail } = body;
+    const { totalLines, sequence, thumbnail, clientRequestId } = body;
 
     if (!totalLines || !sequence) {
       return NextResponse.json(
@@ -27,12 +27,20 @@ export async function POST(req: NextRequest) {
     const user = await User.findById(payload.userId);
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
+    if (clientRequestId && typeof clientRequestId === "string") {
+      const existing = await StringArt.findOne({ userId: user._id.toString(), clientRequestId }).lean();
+      if (existing?._id) {
+        return NextResponse.json({ success: true, id: existing._id }, { status: 200 });
+      }
+    }
+
     const stringArt = await StringArt.create({
       userId: user._id.toString(),
       totalPins: 240,
       totalLines,
       finalSequence: sequence,
       thumbnail: thumbnail || null,
+      clientRequestId: clientRequestId && typeof clientRequestId === "string" ? clientRequestId : null,
     });
 
     return NextResponse.json({

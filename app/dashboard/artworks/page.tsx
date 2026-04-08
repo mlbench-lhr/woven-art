@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import CanvasStringArt from "@/components/CanvasStringArt";
+import InstructionCodeModal from "@/components/SmallComponents/InstructionCodeModal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -21,11 +22,12 @@ type Item = {
 };
 
 export default function MyArtworksPage() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, refreshUser } = useAuth();
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [fetching, setFetching] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [unlockingId, setUnlockingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -50,7 +52,7 @@ export default function MyArtworksPage() {
 
   if (!user)
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen bg-white flex flex-col">
         <Navbar />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -79,8 +81,31 @@ export default function MyArtworksPage() {
     }
   };
 
+  const handleUnlock = async (id: string) => {
+    setUnlockingId(id);
+    try {
+      const res = await fetch("/api/credits/consume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ artId: id }),
+      });
+      if (!res.ok) return;
+      setItems((prev) =>
+        prev.map((it) =>
+          it._id === id
+            ? { ...it, unlocked: true, progressStep: it.progressStep && it.progressStep > 0 ? it.progressStep : 1 }
+            : it
+        )
+      );
+      await refreshUser();
+    } finally {
+      setUnlockingId(null);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#f7f6f4" }}>
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
       <main className="flex-1">
         <div
@@ -148,31 +173,36 @@ export default function MyArtworksPage() {
             </div>
 
             {/* Redeem button */}
-            <button
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                width: "100%",
-                padding: "11px 16px",
-                borderRadius: 12,
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: "pointer",
-                background: "#fff",
-                border: "1.5px solid #e0dbd3",
-                color: "#1a1a1a",
-                marginBottom: 10,
-                fontFamily: "inherit",
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                <line x1="1" y1="10" x2="23" y2="10" />
-              </svg>
-              Redeem or Buy Credits
-            </button>
+            <InstructionCodeModal
+              trigger={
+                <button
+                  type="button"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    width: "100%",
+                    padding: "11px 16px",
+                    borderRadius: 12,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    background: "#fff",
+                    border: "1.5px solid #e0dbd3",
+                    color: "#1a1a1a",
+                    marginBottom: 10,
+                    fontFamily: "inherit",
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                    <line x1="1" y1="10" x2="23" y2="10" />
+                  </svg>
+                  Redeem or Buy Credits
+                </button>
+              }
+            />
 
             {/* Sign out button */}
             <button
@@ -212,9 +242,9 @@ export default function MyArtworksPage() {
               </h1>
               <Link
                 href="/create"
-                style={{ fontSize: 13, color: "#1a1a1a", textDecoration: "underline", textUnderlineOffset: 3 }}
+                style={{ fontSize: 16, fontWeight: 600, color: "#1a1a1a", textDecoration: "underline", textUnderlineOffset: 3 }}
               >
-                Create New
+                + Create New
               </Link>
             </div>
 
@@ -233,7 +263,14 @@ export default function MyArtworksPage() {
             >
               {items.map((it) => {
                 const credits = (user as any)?.credits ?? 0;
-                const canContinue = !!it.unlocked || credits > 0;
+                const isUnlocked = !!it.unlocked;
+                const hasCredits = credits > 0;
+                const actionLabel = isUnlocked
+                  ? (it.progressStep ?? 0) > 1
+                    ? "Continue Stringing"
+                    : "Start Stringing"
+                  : "Unlock with credit";
+                const actionDisabled = isUnlocked ? false : !hasCredits || unlockingId === it._id;
 
                 return (
                   <div
@@ -312,22 +349,26 @@ export default function MyArtworksPage() {
 
                       <div style={{ display: "flex", gap: 6 }}>
                         <button
-                          onClick={() => router.push(`/create/guided?art=${encodeURIComponent(it._id)}`)}
-                          disabled={!canContinue}
+                          onClick={() =>
+                            isUnlocked
+                              ? router.push(`/create/guided?art=${encodeURIComponent(it._id)}`)
+                              : handleUnlock(it._id)
+                          }
+                          disabled={actionDisabled}
                           style={{
-                            background: canContinue ? "#c9b99a" : "#e0dbd3",
+                            background: actionDisabled ? "#e0dbd3" : "#c9b99a",
                             color: "#fff",
                             border: "none",
                             borderRadius: 20,
                             padding: "7px 14px",
                             fontSize: 12,
                             fontWeight: 500,
-                            cursor: canContinue ? "pointer" : "not-allowed",
+                            cursor: actionDisabled ? "not-allowed" : "pointer",
                             fontFamily: "inherit",
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {canContinue ? "Continue Stringing" : "Unlock with credit"}
+                          {unlockingId === it._id ? "Unlocking..." : actionLabel}
                         </button>
 
                         <button

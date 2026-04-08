@@ -1,24 +1,26 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import CanvasStringArt from "@/components/CanvasStringArt";
+import InstructionCodeModal from "@/components/SmallComponents/InstructionCodeModal";
 import { useAuth } from "@/hooks/use-auth";
 import { useVariants } from "@/app/Context/VariantsContext";
 import { toast } from "sonner";
 
 export default function ArtworkStepsPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const { variants, setVariants } = useVariants();
 
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [selectedId, setSelectedId] = useState<string | null>(params.get("variant"));
 
   const redirectParam = useMemo(() => {
@@ -51,40 +53,12 @@ export default function ArtworkStepsPage() {
   const selectedVariant = variants.find((v) => v.id === selectedId);
   const isLoggedIn = !!user;
   const credits = (user as any)?.credits ?? 0;
-  const [redirecting, setRedirecting] = useState(false);
-
-  useEffect(() => {
-    const go = async () => {
-      if (!selectedVariant) return;
-      if (redirecting) return;
-      setRedirecting(true);
-      try {
-        const res = await fetch("/api/artwork/save", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            totalLines: selectedVariant.lines,
-            sequence: selectedVariant.sequence,
-            thumbnail: null,
-          }),
-        });
-        if (res.ok) {
-          const j = await res.json();
-          router.replace(`/create/guided?art=${encodeURIComponent(j.id)}`);
-          return;
-        }
-      } catch {}
-      setRedirecting(false);
-    };
-    if (isLoggedIn && credits > 0 && selectedId && selectedVariant) {
-      go();
-    }
-  }, [isLoggedIn, credits, router, selectedId, selectedVariant, redirecting]);
 
   const handleSaveWithoutInstructions = async () => {
     if (!selectedVariant) return;
     if (!isLoggedIn) return;
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       const res = await fetch("/api/artwork/save", {
@@ -108,6 +82,59 @@ export default function ArtworkStepsPage() {
       toast.error("Failed to save artwork");
     } finally {
       setSaving(false);
+      savingRef.current = false;
+    }
+  };
+
+  const handleStartGuided = async () => {
+    if (!selectedVariant) return;
+    if (!isLoggedIn) return;
+    if (savingRef.current) return;
+
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      const clientRequestId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now());
+      const saveRes = await fetch("/api/artwork/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          totalLines: selectedVariant.lines,
+          sequence: selectedVariant.sequence,
+          thumbnail: null,
+          clientRequestId,
+        }),
+      });
+      if (!saveRes.ok) {
+        const j = await saveRes.json().catch(() => ({}));
+        throw new Error(j.error || `HTTP ${saveRes.status}`);
+      }
+      const saved = await saveRes.json();
+      const artId = saved.id;
+
+      const consumeRes = await fetch("/api/credits/consume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ artId }),
+      });
+
+      if (!consumeRes.ok) {
+        const j = await consumeRes.json().catch(() => ({}));
+        toast.error(j.error || "Unable to unlock artwork");
+        router.push("/dashboard/artworks");
+        return;
+      }
+
+      await refreshUser();
+      router.replace(`/create/guided?art=${encodeURIComponent(artId)}`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to start guided steps");
+    } finally {
+      setSaving(false);
+      savingRef.current = false;
     }
   };
 
@@ -171,18 +198,23 @@ export default function ArtworkStepsPage() {
                         >
                           {saving ? "Saving..." : "Save without instructions"}
                         </Button>
-                        <Button className="opp-button-4 justify-center" onClick={() => router.push("/")}>
-                          Redeem or Buy credits
-                        </Button>
+                        <InstructionCodeModal
+                          trigger={
+                            <Button className="opp-button-4 justify-center">
+                              Redeem or Buy credits
+                            </Button>
+                          }
+                        />
                       </div>
                     </>
                   ) : (
                     <div className="mt-4">
                       <Button
                         className="opp-button-4"
-                        onClick={() => selectedId && router.push(`/create/guided?variant=${encodeURIComponent(selectedId)}`)}
+                        onClick={handleStartGuided}
+                        disabled={!selectedId || !selectedVariant || saving}
                       >
-                        Start Guided Steps
+                        {saving ? "Starting..." : "Start Guided Steps"}
                       </Button>
                     </div>
                   )}

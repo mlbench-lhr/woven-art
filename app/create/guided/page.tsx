@@ -6,13 +6,12 @@
  import Footer from "@/components/layout/Footer";
  import { Button } from "@/components/ui/button";
  import { useVariants } from "@/app/Context/VariantsContext";
- import { useAuth } from "@/hooks/use-auth";
+ import GuidedInfoModal from "@/components/SmallComponents/GuidedInfoModal";
 
  export default function GuidedCreatePage() {
    const params = useSearchParams();
    const router = useRouter();
    const { variants, setVariants } = useVariants();
-   const { user } = useAuth();
    const variantId = params.get("variant");
    const artId = params.get("art");
  
@@ -21,6 +20,7 @@
    const [serverUnlocked, setServerUnlocked] = useState<boolean>(false);
    const [serverProgress, setServerProgress] = useState<number>(1);
    const [loadingArt, setLoadingArt] = useState<boolean>(false);
+  const [artLoaded, setArtLoaded] = useState<boolean>(false);
 
    useEffect(() => {
     if (variants.length === 0) {
@@ -38,6 +38,7 @@
      const load = async () => {
        if (!artId) return;
        setLoadingArt(true);
+       setArtLoaded(false);
        try {
          const res = await fetch(`/api/artwork/${artId}`, { credentials: "include" });
          if (!res.ok) return;
@@ -48,36 +49,18 @@
          setServerProgress(j.progress?.currentStep || 1);
        } finally {
          setLoadingArt(false);
+         setArtLoaded(true);
        }
      };
      load();
    }, [artId]);
  
    useEffect(() => {
-     const consume = async () => {
-       if (!artId) return;
-       if (serverUnlocked) return;
-       const credits = (user as any)?.credits ?? 0;
-       if (credits <= 0) {
-         // If the artwork is locked and there are no credits, go back to dashboard.
-         router.replace("/dashboard/artworks");
-         return;
-       }
-       const res = await fetch("/api/credits/consume", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         credentials: "include",
-         body: JSON.stringify({ artId })
-       });
-       if (res.ok) {
-         setServerUnlocked(true);
-       }
-     };
-     // Only attempt consumption after we load server data
-     if (artId && serverSequence && !serverUnlocked) {
-       consume();
-     }
-   }, [artId, serverUnlocked, serverSequence, user, router]);
+    if (!artId) return;
+    if (!artLoaded) return;
+    if (serverUnlocked) return;
+    router.replace("/dashboard/artworks");
+  }, [artId, artLoaded, serverUnlocked, router]);
 
    const variant = useMemo(
      () => variants.find((v) => v.id === variantId) || variants[0],
@@ -99,7 +82,7 @@
        return;
      }
      setStep(Math.min(1, variant.sequence.length - 1));
-   }, [variant, router]);
+   }, [artId, serverProgress, serverSequence, variant, router]);
  
    useEffect(() => {
      if (!artId) return;
@@ -123,6 +106,7 @@
 
    return (
      <div className="min-h-screen bg-white flex flex-col">
+       <GuidedInfoModal autoOpen />
        <Navbar />
        <main className="flex-1">
          <div className="max-w-[1000px] mx-auto px-6 py-10">
@@ -205,7 +189,9 @@
      const pins: { x: number; y: number }[] = [];
      for (let i = 0; i < totalPins; i++) {
        const angle = (2 * Math.PI * i) / totalPins - Math.PI / 2;
-       pins.push({ x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) });
+      const x = cx + radius * Math.cos(angle);
+      const y = cy + radius * Math.sin(angle);
+      pins.push({ x: 2 * cx - x, y });
      }
 
      if (sequence.length >= 2 && step >= 1) {

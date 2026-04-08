@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import "./globals.css";
-import { Inter } from "next/font/google";
+import { Newsreader, Red_Hat_Display } from "next/font/google";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "sonner";
 import { ReduxProvider } from "@/components/providers/redux-provider";
@@ -19,9 +19,13 @@ export const metadata: Metadata = {
 };
 
 export const preferredRegion = ["fra1"];
-const inter = Inter({
+const redHatDisplay = Red_Hat_Display({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-body",
+});
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-heading",
 });
 
 export default function RootLayout({
@@ -31,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans`}>
+      <body className={`${redHatDisplay.variable} ${newsreader.variable} font-sans`}>
         <VariantsProvider>
           <Suspense
             fallback={

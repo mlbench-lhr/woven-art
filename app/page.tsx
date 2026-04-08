@@ -4,6 +4,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 
 export default function HomePage() {
   const router = useRouter();
@@ -13,17 +14,25 @@ export default function HomePage() {
       <main className="flex-1">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-6 lg:py-12 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
           <div className="flex flex-col justify-center">
-            <h1 className="text-4xl lg:text-5xl font-semibold text-[#171d1a]">
+            <h1 className="text-4xl font-semibold text-[#171d1a]">
               Transform Photos into
-              <br />
+              <Image
+                src="/SVG.png"
+                alt="SVG"
+                width={0}
+                height={0}
+                sizes="100vw"
+                className="w-auto h-auto object-cover"
+              />
               String Art
             </h1>
-            <div className="mt-2 h-[10px] w-[240px] border-b-2 border-dotted border-[#C5B4A3]"></div>
             <p className="mt-6 plan-text-style-3 text-[#51606e]">
-              Create stunning string art designs in a few clicks
+              Start stringing and bring your art to life
             </p>
             <div className="mt-8">
-              <Button className="opp-button-4" onClick={() => router.push("/create")}>Start Creating</Button>
+              <Button className="rounded-full" onClick={() => router.push("/create")}>
+                <span className="ml-2">Start Creating</span><ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
             </div>
           </div>
           <div className="relative flex items-center justify-center">

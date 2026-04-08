@@ -48,7 +48,6 @@
     "@radix-ui/react-toggle-group": "latest",
     "@radix-ui/react-tooltip": "latest",
     "@react-pdf/renderer": "^4.3.1",
-    "@sveltejs/kit": "latest",
     "@tiptap/extension-image": "^3.7.2",
     "@tiptap/react": "^3.7.2",
     "@tiptap/starter-kit": "^3.7.2",
@@ -70,7 +69,7 @@
     "lucide-react": "^0.454.0",
     "moment": "^2.30.1",
     "mongoose": "latest",
-    "next": "latest",
+    "next": "16.2.2",
     "next-themes": "latest",
     "nodemailer": "^7.0.6",
     "react": "^19",
@@ -88,13 +87,10 @@
     "recharts": "latest",
     "resend": "^6.3.0",
     "sonner": "latest",
-    "svelte": "latest",
     "sweetalert2": "^11.23.0",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "latest",
-    "vue": "latest",
-    "vue-router": "latest",
     "yet-another-react-lightbox": "^3.25.0",
     "zod": "3.25.67"
   },
@@ -108,10 +104,13 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9.0.0",
-    "eslint-config-next": "15.5.14",
+    "eslint-config-next": "16.2.2",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

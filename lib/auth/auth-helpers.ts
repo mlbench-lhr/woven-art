@@ -1,4 +1,4 @@
-import api from "@/lib/api/axios-config";
+const jsonHeaders = { "Content-Type": "application/json" };
 
 export interface SignUpData {
   fullName: string;
@@ -14,22 +14,20 @@ export interface SignInData {
 
 export const signUp = async (userData: SignUpData) => {
   try {
-    const response = await api.post("/api/auth/signup", userData);
-
-    // Set auth cookie
-    if (response.data.token) {
-      document.cookie = `auth_token=${response.data.token}; path=/; max-age=${
-        7 * 24 * 60 * 60
-      }; secure; samesite=strict`;
-    }
-
-    return { data: response.data, error: null };
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: jsonHeaders,
+      credentials: "include",
+      body: JSON.stringify(userData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || "Sign up failed");
+    return { data, error: null };
   } catch (error: any) {
     return {
       data: null,
       error: {
-        message:
-          error.response?.data?.error || error.message || "Sign up failed",
+        message: error.message || "Sign up failed",
       },
     };
   }
@@ -41,26 +39,24 @@ export const signIn = async (
   expectedRole?: "admin" | "vendor" | "user"
 ) => {
   try {
-    const response = await api.post("/api/auth/signin", {
-      email,
-      password,
-      expectedRole,
+    const res = await fetch("/api/auth/signin", {
+      method: "POST",
+      headers: jsonHeaders,
+      credentials: "include",
+      body: JSON.stringify({
+        email,
+        password,
+        expectedRole,
+      }),
     });
-
-    // Set auth cookie
-    if (response.data.token) {
-      document.cookie = `auth_token=${response.data.token}; path=/; max-age=${
-        7 * 24 * 60 * 60
-      }; secure; samesite=strict`;
-    }
-
-    return { data: response.data, error: null };
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || "Sign in failed");
+    return { data, error: null };
   } catch (error: any) {
     return {
       data: null,
       error: {
-        message:
-          error.response?.data?.error || error.message || "Sign in failed",
+        message: error.message || "Sign in failed",
       },
     };
   }
@@ -89,22 +85,21 @@ export const signInWithGoogle = async (
 
 export const signOut = async () => {
   try {
-    await api.post("/api/auth/signout");
-
-    // Clear auth cookie
+    await fetch("/api/auth/signout", {
+      method: "POST",
+      credentials: "include",
+    });
     document.cookie =
       "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
     return { error: null };
   } catch (error: any) {
-    // Still clear cookie even if server call fails
     document.cookie =
       "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
     return {
       error: {
-        message:
-          error.response?.data?.error || error.message || "Sign out failed",
+        message: error.message || "Sign out failed",
       },
     };
   }
@@ -112,16 +107,20 @@ export const signOut = async () => {
 
 export const forgotPassword = async (email: string) => {
   try {
-    const response = await api.post("/api/auth/forgot-password", { email });
-    return { data: response.data, error: null };
+    const res = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: jsonHeaders,
+      credentials: "include",
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || "Failed to send reset email");
+    return { data, error: null };
   } catch (error: any) {
     return {
       data: null,
       error: {
-        message:
-          error.response?.data?.error ||
-          error.message ||
-          "Failed to send reset email",
+        message: error.message || "Failed to send reset email",
       },
     };
   }
@@ -129,19 +128,20 @@ export const forgotPassword = async (email: string) => {
 
 export const updatePassword = async (token: string, password: string) => {
   try {
-    const response = await api.post("/api/auth/reset-password", {
-      token,
-      password,
+    const res = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: jsonHeaders,
+      credentials: "include",
+      body: JSON.stringify({ token, password }),
     });
-    return { data: response.data, error: null };
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || "Failed to update password");
+    return { data, error: null };
   } catch (error: any) {
     return {
       data: null,
       error: {
-        message:
-          error.response?.data?.error ||
-          error.message ||
-          "Failed to update password",
+        message: error.message || "Failed to update password",
       },
     };
   }
@@ -149,14 +149,18 @@ export const updatePassword = async (token: string, password: string) => {
 
 export const getCurrentUser = async () => {
   try {
-    const response = await api.get("/api/auth/me");
-    return { data: response.data, error: null };
+    const res = await fetch("/api/auth/me", {
+      method: "GET",
+      credentials: "include",
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || "Failed to get user");
+    return { data, error: null };
   } catch (error: any) {
     return {
       data: null,
       error: {
-        message:
-          error.response?.data?.error || error.message || "Failed to get user",
+        message: error.message || "Failed to get user",
       },
     };
   }

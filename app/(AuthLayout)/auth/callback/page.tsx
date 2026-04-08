@@ -15,15 +15,11 @@ export default function AuthCallbackPage() {
     const error = searchParams.get("error");
 
     if (error) {
-      // Handle OAuth errors
       router.push(`/auth/login?error=${error}`);
       return;
     }
 
     if (token) {
-      document.cookie = `auth_token=${token}; path=/; max-age=${
-        7 * 24 * 60 * 60
-      }; secure; samesite=strict`;
       const cookie = document.cookie
         .split("; ")
         .find((row) => row.startsWith("post_login_redirect="))
@@ -34,8 +30,14 @@ export default function AuthCallbackPage() {
       refreshUser();
       router.push(redirect);
     } else {
-      // No token, redirect to login
-      router.push("/auth/login");
+      // If no token query param, try to continue with server-set cookie
+      const cookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("post_login_redirect="))
+        ?.split("=")[1];
+      const redirect = cookie ? decodeURIComponent(cookie) : "/";
+      refreshUser();
+      router.push(redirect || "/");
     }
   }, [searchParams, router]);
 

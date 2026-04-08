@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import CanvasStringArt from "@/components/CanvasStringArt";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
 
 type Item = {
   _id: string;
@@ -69,35 +68,11 @@ export default function MyArtworksPage() {
     );
 
   const handleDelete = async (id: string) => {
-    const result = await Swal.fire({
-      title: "Delete artwork?",
-      text: "This will permanently remove this artwork.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Delete",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#d33",
-    });
-    if (!result.isConfirmed) return;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/artwork/${id}`, { method: "DELETE", credentials: "include" });
       if (res.ok) {
         setItems((prev) => prev.filter((x) => x._id !== id));
-        Swal.fire({
-          icon: "success",
-          title: "Deleted",
-          text: "Artwork removed from your account.",
-          timer: 1200,
-          showConfirmButton: false,
-        });
-      } else {
-        const j = await res.json().catch(() => ({} as any));
-        Swal.fire({
-          icon: "error",
-          title: "Failed",
-          text: j?.error || "Could not delete artwork.",
-        });
       }
     } finally {
       setDeletingId(null);
@@ -148,13 +123,7 @@ export default function MyArtworksPage() {
               </div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>
-                  {(() => {
-                    const fn =
-                      (typeof user.fullName === "string" ? user.fullName : "") || "";
-                    const cleaned = fn.replace(/undefined/gi, "").replace(/\s+/g, " ").trim();
-                    const alt = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
-                    return cleaned || alt || (user.email?.split("@")[0] || "User");
-                  })()}
+                  {user.fullName || "User"}
                 </div>
                 <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{user.email}</div>
               </div>

@@ -88,11 +88,21 @@ export async function POST(request: NextRequest) {
       role: user.role,
     };
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: "Login successful",
       user: userData,
       token,
     });
+
+    response.cookies.set("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      sameSite: "strict",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
   } catch (error: any) {
     console.error("Signin error:", error);
 

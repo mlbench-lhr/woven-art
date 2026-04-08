@@ -1,5 +1,5 @@
 import { LocationData } from "@/components/map";
-import mongoose, { type Document, Schema, type HydratedDocument } from "mongoose";
+import mongoose, { type Document, Schema } from "mongoose";
 
 export interface VendorDetails {
   confirmPassword?: string;
@@ -29,7 +29,7 @@ export interface VendorDetails {
 
 export interface IUser extends Document {
   role: "admin" | "user" | "vendor";
-  _id: mongoose.Types.ObjectId;
+  _id: string;
   email: string;
   password: string;
   phoneNumber: string;
@@ -53,7 +53,7 @@ export interface IUser extends Document {
   googleId?: string;
   createdAt: Date;
   updatedAt: Date;
-  profileUpdated: boolean;
+  profileUpdated: Boolean;
   vendorDetails: VendorDetails;
   favorites: string[];
   notificationPreferences?: Record<string, boolean>;
@@ -75,7 +75,7 @@ const UserSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: function (this: HydratedDocument<IUser>) {
+      required: function () {
         return !this.googleId;
       },
     },
@@ -149,7 +149,7 @@ const UserSchema = new Schema<IUser>(
           total: { type: Number, default: 0 },
         },
       },
-      required: function (this: HydratedDocument<IUser>) {
+      required: function () {
         return this.role === "vendor";
       },
       default: null,

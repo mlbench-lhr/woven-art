@@ -56,15 +56,9 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Create new user
-      const fullNameClean = [googleUser.given_name, googleUser.family_name]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
       user = new User({
         email: emailLower,
-        fullName: fullNameClean,
-        firstName: googleUser.given_name || "",
-        lastName: googleUser.family_name || "",
+        fullName: googleUser.given_name + googleUser.family_name,
         googleId: googleUser.id,
         avatar: googleUser.picture,
         isEmailVerified: googleUser.verified_email,
@@ -85,7 +79,15 @@ export async function GET(request: NextRequest) {
     const redirectUrl = new URL(`${baseUrl}/auth/callback`);
     redirectUrl.searchParams.set("token", token);
 
-    return NextResponse.redirect(redirectUrl.toString());
+    const res = NextResponse.redirect(redirectUrl.toString());
+    res.cookies.set("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      sameSite: "strict",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    return res;
   } catch (error: any) {
     console.error("Google OAuth callback error:", error);
     const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;

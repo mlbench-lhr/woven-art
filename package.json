@@ -70,7 +70,7 @@
     "lucide-react": "^0.454.0",
     "moment": "^2.30.1",
     "mongoose": "latest",
-    "next": "15.5.14",
+    "next": "latest",
     "next-themes": "latest",
     "nodemailer": "^7.0.6",
     "react": "^19",

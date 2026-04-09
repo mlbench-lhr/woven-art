@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/hooks/use-auth";
@@ -9,6 +10,18 @@ import CanvasStringArt from "@/components/CanvasStringArt";
 import InstructionCodeModal from "@/components/SmallComponents/InstructionCodeModal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowRight, CreditCard, LogOut } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Item = {
   _id: string;
@@ -28,6 +41,9 @@ export default function MyArtworksPage() {
   const [fetching, setFetching] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [unlockingId, setUnlockingId] = useState<string | null>(null);
+  const [confirmUnlockId, setConfirmUnlockId] = useState<string | null>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -78,6 +94,7 @@ export default function MyArtworksPage() {
       }
     } finally {
       setDeletingId(null);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -101,6 +118,7 @@ export default function MyArtworksPage() {
       await refreshUser();
     } finally {
       setUnlockingId(null);
+      setConfirmUnlockId(null);
     }
   };
 
@@ -108,6 +126,65 @@ export default function MyArtworksPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
       <main className="flex-1">
+        {/* Logout Confirmation Dialog */}
+        <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You will need to log in again to access your saved artworks and credits.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={async () => { await signOut(); router.push("/"); setShowLogoutConfirm(false); }} 
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Log Out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete this artwork?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This artwork will be permanently removed from your account.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => confirmDeleteId && handleDelete(confirmDeleteId)} 
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={!!confirmUnlockId} onOpenChange={(open) => !open && setConfirmUnlockId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Unlock</AlertDialogTitle>
+              <AlertDialogDescription>
+                You will now use 1 credit to unlock the instructions.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => confirmUnlockId && handleUnlock(confirmUnlockId)}>
+                OK
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <div
           className="mx-auto px-6 py-10"
           style={{
@@ -119,55 +196,31 @@ export default function MyArtworksPage() {
         >
           {/* ── Sidebar ── */}
           <aside
-            style={{
-              background: "#fff",
-              border: "1px solid #e8e4de",
-              borderRadius: 20,
-              padding: "22px 20px",
-              height: "fit-content",
-            }}
+            className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-[24px] p-6 h-fit"
           >
             {/* Profile row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  background: "#e0d8cc",
-                  overflow: "hidden",
-                  flexShrink: 0,
-                }}
-              >
-                {/* placeholder avatar circle */}
-                <svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" width="44" height="44">
-                  <rect width="44" height="44" fill="#d4c8b8" />
-                  <circle cx="22" cy="17" r="8" fill="#a89880" />
-                  <ellipse cx="22" cy="38" rx="13" ry="9" fill="#a89880" />
-                </svg>
+            <div className="flex items-center gap-3 mb-6 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="size-11 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-sm">
+                {(user as any).avatar ? (
+                  <img src={(user as any).avatar} alt={user.fullName || "User"} width={44} height={44} className="object-cover" />
+                ) : (
+                  <div className="size-full bg-[#e0d8cc] flex items-center justify-center text-[#a89880] font-bold">
+                    {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
+                  </div>
+                )}
               </div>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-[#1a1a1a] truncate">
                   {user.fullName || "User"}
                 </div>
-                <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{user.email}</div>
+                <div className="text-[11px] text-[#888] truncate">{user.email}</div>
               </div>
             </div>
 
-            {/* Credits */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                background: "#f7f6f4",
-                borderRadius: 12,
-                padding: "12px 14px",
-                marginBottom: 14,
-              }}
-            >
-              <span style={{ fontSize: 13, fontWeight: 500, color: "#555" }}>Credits</span>
-              <span style={{ fontSize: 22, fontWeight: 600, color: "#1a1a1a" }}>
+            {/* Credits Row */}
+            <div className="flex items-center justify-between bg-white border border-gray-100 rounded-2xl p-4 mb-4 shadow-sm">
+              <span className="text-sm font-medium text-[#555]">Credits</span>
+              <span className="text-xl font-bold text-[#1a1a1a]">
                 {(user as any)?.credits ?? 0}
               </span>
             </div>
@@ -177,28 +230,9 @@ export default function MyArtworksPage() {
               trigger={
                 <button
                   type="button"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                    width: "100%",
-                    padding: "11px 16px",
-                    borderRadius: 12,
-                    fontSize: 13,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    background: "#fff",
-                    border: "1.5px solid #e0dbd3",
-                    color: "#1a1a1a",
-                    marginBottom: 10,
-                    fontFamily: "inherit",
-                  }}
+                  className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl text-sm font-medium cursor-pointer bg-white border border-gray-200 text-[#555] mb-3 hover:bg-gray-50 transition-colors"
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                    <line x1="1" y1="10" x2="23" y2="10" />
-                  </svg>
+                  <CreditCard size={18} />
                   Redeem or Buy Credits
                 </button>
               }
@@ -206,61 +240,69 @@ export default function MyArtworksPage() {
 
             {/* Sign out button */}
             <button
-              onClick={async () => { await signOut(); router.push("/"); }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                width: "100%",
-                padding: "11px 16px",
-                borderRadius: 12,
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: "pointer",
-                background: "#fff2f2",
-                border: "1.5px solid #f5c6c6",
-                color: "#c0392b",
-                fontFamily: "inherit",
-              }}
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl text-sm font-semibold cursor-pointer bg-[#FFE4E4] text-[#F24E1E] hover:bg-[#FFD1D1] transition-colors border-none"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
+              <LogOut size={18} />
               Sign Out
             </button>
           </aside>
 
           {/* ── Main content ── */}
-          <div>
+          <div className="flex flex-col">
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-              <h1 style={{ fontSize: 28, fontWeight: 600, color: "#1a1a1a", letterSpacing: "-0.3px" }}>
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-2xl font-bold text-[#1a1a1a] tracking-tight">
                 My Artworks
               </h1>
-              <Link
-                href="/create"
-                style={{ fontSize: 16, fontWeight: 600, color: "#1a1a1a", textDecoration: "underline", textUnderlineOffset: 3 }}
-              >
-                + Create New
-              </Link>
+              {items.length > 0 && (
+                <Link
+                  href="/create"
+                  className="text-sm font-semibold text-[#1a1a1a] hover:underline underline-offset-4"
+                >
+                  + Create New
+                </Link>
+              )}
             </div>
+
+            {/* Loading state shimmer */}
+            {fetching && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {[1, 2, 3].map((n) => (
+                  <div
+                    key={n}
+                    className="bg-white border border-[#E5E7EB] rounded-[24px] p-5 flex flex-col items-center relative"
+                  >
+                    <Skeleton className="absolute top-5 right-5 w-16 h-5 rounded-full" />
+                    <Skeleton className="w-[180px] h-[180px] rounded-full mt-6" />
+                    <div className="w-full flex justify-between mt-6">
+                      <Skeleton className="w-28 h-9 rounded-full" />
+                      <Skeleton className="w-20 h-9 rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Empty state */}
             {items.length === 0 && !fetching && (
-              <div style={{ color: "#888", fontSize: 14 }}>No saved artworks yet.</div>
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <h2 className="text-3xl font-semibold text-[#1a1a1a] font-heading mb-3">
+                  You have not created any Woven-Arts yet
+                </h2>
+                <p className="text-gray-500 mb-10 max-w-[400px] text-base">
+                  Get started by creating your first String Art now.
+                </p>
+                <Button 
+                  className="rounded-full px-6 py-3 h-auto text-md font-medium flex items-center shadow-lg hover:shadow-xl transition-all"
+                  onClick={() => router.push("/create")}
+                > <span className="ml-2">Start Creating</span><ArrowRight className="size-4" />
+                </Button>
+              </div>
             )}
 
             {/* Artwork grid */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: 20,
-              }}
-            >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {items.map((it) => {
                 const credits = (user as any)?.credits ?? 0;
                 const isUnlocked = !!it.unlocked;
@@ -275,120 +317,72 @@ export default function MyArtworksPage() {
                 return (
                   <div
                     key={it._id}
-                    style={{
-                      background: "#fff",
-                      border: "1px solid #e8e4de",
-                      borderRadius: 18,
-                      padding: 16,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      position: "relative",
-                    }}
+                    className="bg-white border border-[#E5E7EB] rounded-[24px] p-5 flex flex-col items-center relative hover:shadow-md transition-shadow"
                   >
                     {/* Step badge — top right */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 14,
-                        right: 14,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "#1a1a1a",
-                      }}
-                    >
+                    <div className="absolute top-5 right-5 text-[10px] font-bold text-[#1a1a1a] bg-[#F3F4F6] px-2.5 py-1 rounded-full border border-gray-100">
                       Step {it.progressStep || 0}/{it.totalLines}
                     </div>
 
                     {/* Canvas preview */}
-                    <div
-                      style={{
-                        width: 190,
-                        height: 190,
-                        borderRadius: "50%",
-                        overflow: "hidden",
-                        background: "#ede9e3",
-                        marginTop: 8,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                    <div 
+                      className={`w-[180px] h-[180px] rounded-full overflow-hidden bg-white mt-6 flex items-center justify-center border-4 border-white shadow-md ${isUnlocked ? "cursor-pointer" : ""}`}
+                      onClick={() => {
+                        if (isUnlocked) {
+                          router.push(`/create/guided?art=${encodeURIComponent(it._id)}`);
+                        }
                       }}
                     >
                       {it.finalSequence ? (
                         <CanvasStringArt
                           sequence={it.finalSequence}
                           totalPins={it.totalPins}
-                          size={190}
-                          strokeColor="#888"
-                          strokeWidth={0.25}
+                          size={180}
+                          strokeColor="#666"
+                          strokeWidth={0.1}
                         />
                       ) : (
-                        <span style={{ fontSize: 11, color: "#aaa" }}>No preview</span>
+                        <span className="text-[10px] text-gray-400 font-medium">No preview</span>
                       )}
                     </div>
 
                     {/* Date + action row */}
-                    <div
-                      style={{
-                        width: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginTop: 14,
-                        paddingLeft: 2,
-                        paddingRight: 2,
-                      }}
-                    >
-                      {/* <span style={{ fontSize: 12, color: "#888" }}>
-                        {new Date(it.createdAt).toLocaleDateString("en-GB", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </span> */}
-
-                      <div style={{ display: "flex", gap: 6 }}>
+                    <div className="w-full flex flex-col gap-4 mt-6">
+                      <div className="flex gap-2 w-full">
                         <button
                           onClick={() =>
                             isUnlocked
                               ? router.push(`/create/guided?art=${encodeURIComponent(it._id)}`)
-                              : handleUnlock(it._id)
+                              : setConfirmUnlockId(it._id)
                           }
                           disabled={actionDisabled}
-                          style={{
-                            background: actionDisabled ? "#e0dbd3" : "#c9b99a",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 20,
-                            padding: "7px 14px",
-                            fontSize: 12,
-                            fontWeight: 500,
-                            cursor: actionDisabled ? "not-allowed" : "pointer",
-                            fontFamily: "inherit",
-                            whiteSpace: "nowrap",
-                          }}
+                          className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                            actionDisabled 
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                              : "bg-[#C5B4A3] text-white hover:bg-[#B5A493] shadow-sm"
+                          }`}
                         >
                           {unlockingId === it._id ? "Unlocking..." : actionLabel}
                         </button>
 
                         <button
-                          onClick={() => handleDelete(it._id)}
+                          onClick={() => setConfirmDeleteId(it._id)}
                           disabled={deletingId === it._id}
-                          style={{
-                            background: "transparent",
-                            color: "#c0392b",
-                            border: "1.5px solid #f5c6c6",
-                            borderRadius: 20,
-                            padding: "7px 12px",
-                            fontSize: 12,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            fontFamily: "inherit",
-                            opacity: deletingId === it._id ? 0.5 : 1,
-                          }}
+                          className="px-4 py-2.5 rounded-xl text-xs font-bold border border-[#FEE2E2] text-[#F24E1E] hover:bg-[#FEF2F2] transition-colors"
                         >
                           {deletingId === it._id ? "..." : "Delete"}
                         </button>
+                      </div>
+
+                      {/* Creation Date below buttons */}
+                      <div className="text-center">
+                        <span className="text-[10px] text-gray-400 font-bold tracking-wide uppercase">
+                          Created {new Date(it.createdAt).toLocaleDateString("en-US", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
                       </div>
                     </div>
                   </div>

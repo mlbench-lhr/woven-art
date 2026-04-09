@@ -22,17 +22,6 @@ export async function middleware(request: NextRequest) {
 
   const isLoggedIn = !!token;
 
-  try {
-    console.log(
-      JSON.stringify({
-        mw_path: pathname,
-        has_token: isLoggedIn,
-        from_header: !!request.headers.get("authorization"),
-        from_cookie: !!request.cookies.get("auth_token"),
-      })
-    );
-  } catch {}
-
   if (pathname === "/") {
     return NextResponse.next();
   }

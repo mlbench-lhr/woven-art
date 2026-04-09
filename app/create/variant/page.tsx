@@ -15,6 +15,7 @@ export default function SelectVariantPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [note, setNote] = useState<string>("This can take 4-8 minutes. Please keep this tab open, leaving or closing the page will pause generation.");
   const [progress, setProgress] = useState<Record<string, number>>({});
+  const [generating, setGenerating] = useState(false);
   const generatingRef = useRef(false);
 
   useEffect(() => {
@@ -28,12 +29,14 @@ export default function SelectVariantPage() {
     if (generatingRef.current) return;
 
     const run = async () => {
+      setGenerating(true);
       if (variants.length > 0) {
         const initialProgress: Record<string, number> = {};
         for (const v of variants) initialProgress[v.id] = 0;
         setProgress(initialProgress);
         animateStoredVariants(variants, setProgress);
         setNote("");
+        setGenerating(false);
         return;
       }
 
@@ -53,13 +56,17 @@ export default function SelectVariantPage() {
         setProgress(initialProgress);
         animateStoredVariants(stored as any, setProgress);
         setNote("");
+        setGenerating(false);
         return;
       }
 
       generatingRef.current = true;
       try {
         const preview = sessionStorage.getItem("stringArtPreview");
-        if (!preview) return;
+        if (!preview) {
+          setGenerating(false);
+          return;
+        }
         const imageData = await prepareImage(preview, 360);
         const totalPins = 240;
         const cfgs = [
@@ -97,6 +104,7 @@ export default function SelectVariantPage() {
         console.error(e);
       } finally {
         generatingRef.current = false;
+        setGenerating(false);
       }
     };
 
@@ -119,8 +127,8 @@ export default function SelectVariantPage() {
                 sequence={current.sequence}
                 totalPins={240}
                 size={360}
-                strokeColor="#aaa"
-                strokeWidth={0.35}
+                strokeColor="#666"
+                strokeWidth={0.2}
                 progressLen={currentProgress}
               />
             </div>
@@ -132,15 +140,17 @@ export default function SelectVariantPage() {
                 key={v.id}
                 onClick={() => setSelected(v.id)}
                 className={`relative w-[80px] h-[80px] rounded-full overflow-hidden border transition-all ${
-                  selected === v.id ? "border-[#C5B4A3] shadow" : "border-gray-300 hover:border-[#C5B4A3]"
+                  selected === v.id
+                    ? "border-[3px] border-[#C5B4A3] shadow-md scale-110"
+                    : "border-gray-300 hover:border-[#C5B4A3]"
                 }`}
               >
                 <ProgressiveStringPreview
                   sequence={v.sequence}
                   totalPins={240}
                   size={80}
-                  strokeColor="#bbb"
-                  strokeWidth={0.1}
+                  strokeColor="#777"
+                  strokeWidth={0.05}
                   progressLen={progress[v.id] ?? 0}
                 />
               </button>
@@ -159,9 +169,9 @@ export default function SelectVariantPage() {
                 } catch {}
                 router.push(`/create/artwork?variant=${encodeURIComponent(selected || "")}`);
               }}
-              disabled={!selected}
+              disabled={!selected || generating}
             >
-              Create Artwork
+              {generating ? "Generating..." : "Create Artwork"}
             </Button>
           </div>
         </div>
@@ -204,10 +214,10 @@ function animateStoredVariants(
     for (const v of stored) {
       const max = Math.max(0, v.sequence.length - 1);
       const cur = state[v.id] ?? 0;
-      if (cur < max) {
-        state[v.id] = Math.min(max, cur + 220);
-        allDone = false;
-      }
+        if (cur < max) {
+          state[v.id] = Math.min(max, cur + 2);
+          allDone = false;
+        }
     }
     setProgressFn({ ...state });
     if (!allDone) raf = window.requestAnimationFrame(step);
@@ -233,13 +243,22 @@ async function generateStringArtProgressive({
 }) {
   const size = imageData.width;
   const data = imageData.data;
-  const pixels = new Float32Array(size * size);
-  for (let i = 0; i < size * size; i++) {
-    const r = data[i * 4];
-    const g = data[i * 4 + 1];
-    const b = data[i * 4 + 2];
-    pixels[i] = 0.299 * r + 0.587 * g + 0.114 * b;
-  }
+    const pixels = new Float32Array(size * size);
+    const contrastFactor = 0.4; // Even less contrast
+    const brightnessOffset = 120; // Even more brightness
+
+    for (let i = 0; i < size * size; i++) {
+      const r = data[i * 4];
+      const g = data[i * 4 + 1];
+      const b = data[i * 4 + 2];
+      let grayscale = 0.299 * r + 0.587 * g + 0.114 * b;
+
+      // Apply contrast and brightness adjustments
+      grayscale = (grayscale - 128) * contrastFactor + 128 + brightnessOffset;
+
+      // Clamp values to 0-255
+      pixels[i] = Math.max(0, Math.min(255, grayscale));
+    }
 
   const working = new Float32Array(pixels);
   const pins: { x: number; y: number }[] = [];
@@ -321,7 +340,7 @@ async function generateStringArtProgressive({
 
     current = bestPin;
 
-    if (step - lastReport >= 40 || step === totalLines - 1) {
+    if (step - lastReport >= 1 || step === totalLines - 1) {
       lastReport = step;
       onLine(sequenceOut.length - 1);
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));

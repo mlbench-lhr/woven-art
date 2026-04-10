@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Gauge, Pause, Play, RotateCcw, Settings, Volume2 } from "lucide-react";
+import { FastForward, Pause, Play, RotateCcw, Settings, Volume2 } from "lucide-react";
 import { mapIndexToColor } from "@/lib/mappers";
 
 type ColorName = "Green" | "Yellow" | "Red" | "Blue";
@@ -236,7 +236,19 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
         const text = from.color && from.pin && to.color && to.pin ? `${from.color} ${from.pin} to ${to.color} ${to.pin}` : `Pin ${fromIdx} to ${toIdx}`;
         await speak(text, token);
         if (playTokenRef.current !== token) break;
-        const pauseMs = clampNumber(Math.round(250 / clampNumber(speedRef.current, 0.5, 2)), 80, 400);
+
+        // Custom pause based on speed setting
+        let pauseMs = 1500; // Default for 3x
+        if (speedRef.current <= 0.25) {
+          pauseMs = 8000;
+        } else if (speedRef.current <= 0.5) {
+          pauseMs = 6000;
+        } else if (speedRef.current <= 1) {
+          pauseMs = 4000;
+        } else if (speedRef.current <= 2) {
+          pauseMs = 2500;
+        }
+
         await new Promise((r) => setTimeout(r, pauseMs));
       }
       if (playTokenRef.current === token) setIsPlaying(false);
@@ -341,18 +353,27 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2 text-gray-700">
-                          <Gauge className="size-4" />
+                          <FastForward className="size-4" />
                           <span>Speed</span>
                         </div>
-                        <span className="text-gray-600">{speed.toFixed(1)}x</span>
+                        <span className="text-gray-600">
+                          {speed === 0.25 ? "0.25x" : speed === 0.5 ? "0.5x" : speed === 1 ? "1x" : speed === 2 ? "2x" : "3x"}
+                        </span>
                       </div>
                       <Slider
                         className="[&_[data-slot=slider-track]]:bg-[#E5E7EB] [&_[data-slot=slider-range]]:bg-[#C5B4A3] [&_[data-slot=slider-thumb]]:border-[#C5B4A3] [&_[data-slot=slider-thumb]]:size-3.5"
-                        value={[Number(speed.toFixed(1))]}
-                        min={0.5}
-                        max={2}
-                        step={0.1}
-                        onValueChange={(v) => setSpeed(clampNumber(v[0] ?? 1, 0.5, 2))}
+                        value={[speed === 0.25 ? 0 : speed === 0.5 ? 25 : speed === 1 ? 50 : speed === 2 ? 75 : 100]}
+                        min={0}
+                        max={100}
+                        step={25}
+                        onValueChange={(v) => {
+                          const val = v[0] ?? 50;
+                          if (val === 0) setSpeed(0.25);
+                          else if (val === 25) setSpeed(0.5);
+                          else if (val === 50) setSpeed(1);
+                          else if (val === 75) setSpeed(2);
+                          else setSpeed(3);
+                        }}
                       />
                     </div>
 
@@ -460,20 +481,17 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
                     }
                   >
                     <SelectTrigger className="h-12 rounded-2xl bg-gray-50 border-gray-100 px-5 text-sm w-[220px]">
-                      <span className="inline-flex items-center gap-3">
-                        <span
-                          className="inline-block size-5 rounded-md bg-gray-200"
-                          style={{ backgroundColor: row.color ? COLOR_HEX[row.color] : "#E5E7EB" }}
-                        />
-                        <SelectValue placeholder="Select Color" />
-                      </span>
+                      <SelectValue placeholder="Select Color" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border-gray-100 rounded-2xl shadow-xl">
                       {COLOR_ORDER.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          <span className="inline-flex items-center gap-2">
-                            <span className="inline-block size-4 rounded-md" />
-                            <span>{c}</span>
+                        <SelectItem key={c} value={c} className="focus:bg-gray-50 rounded-xl cursor-pointer py-3">
+                          <span className="inline-flex items-center gap-3">
+                            <span
+                              className="inline-block size-5 rounded-md"
+                              style={{ backgroundColor: COLOR_HEX[c] }}
+                            />
+                            <span className="font-medium text-gray-700">{c}</span>
                           </span>
                         </SelectItem>
                       ))}

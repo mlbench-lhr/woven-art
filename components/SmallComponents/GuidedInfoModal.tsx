@@ -24,7 +24,7 @@ export default function GuidedInfoModal({ autoOpen = true }: Props) {
         <div className="flex flex-col items-center text-center">
           <DialogTitle className="text-[20px] font-semibold text-[#111111]">Info</DialogTitle>
           <div className="mt-6">
-            <Image src="/guided-info-icon.svg" alt="" width={120} height={80} priority />
+            <Image src="/guided-info-icon.png" alt="" width={80} height={50} priority />
           </div>
           <div className="mt-6 text-[15px] leading-6 text-[#222222] max-w-[420px]">
             <span className="font-semibold">Note:</span>{" "}

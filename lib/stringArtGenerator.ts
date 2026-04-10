@@ -21,11 +21,59 @@ export function generateStringArt({
 
   // --- 1. LIGHTNESS
   const pixels = new Float32Array(size * size)
+  const base = new Uint8Array(size * size)
   for (let i = 0; i < size * size; i++) {
     const r = data[i * 4]
     const g = data[i * 4 + 1]
     const b = data[i * 4 + 2]
-    pixels[i] = 0.299 * r + 0.587 * g + 0.114 * b
+    base[i] = Math.round(0.299 * r + 0.587 * g + 0.114 * b)
+  }
+  const blurH = new Float32Array(size * size)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const x0 = x > 0 ? x - 1 : 0
+      const x1 = x
+      const x2 = x + 1 < size ? x + 1 : size - 1
+      const idx = y * size
+      blurH[idx + x] = (base[idx + x0] + base[idx + x1] + base[idx + x2]) / 3
+    }
+  }
+  const blurred = new Uint8Array(size * size)
+  for (let y = 0; y < size; y++) {
+    const y0 = y > 0 ? y - 1 : 0
+    const y1 = y
+    const y2 = y + 1 < size ? y + 1 : size - 1
+    for (let x = 0; x < size; x++) {
+      const v = (blurH[y0 * size + x] + blurH[y1 * size + x] + blurH[y2 * size + x]) / 3
+      blurred[y * size + x] = Math.round(v)
+    }
+  }
+  const hist = new Uint32Array(256)
+  for (let i = 0; i < blurred.length; i++) hist[blurred[i]]++
+  const total = size * size
+  const lowCount = Math.floor(total * 0.02)
+  const highCount = Math.floor(total * 0.98)
+  let acc = 0
+  let pLow = 0
+  for (let i = 0; i < 256; i++) {
+    acc += hist[i]
+    if (acc >= lowCount) { pLow = i; break }
+  }
+  acc = 0
+  let pHigh = 255
+  for (let i = 0; i < 256; i++) {
+    acc += hist[i]
+    if (acc >= highCount) { pHigh = i; break }
+  }
+  if (pHigh <= pLow) { pLow = 0; pHigh = 255 }
+  const range = pHigh - pLow
+  const gamma = 0.9
+  for (let i = 0; i < pixels.length; i++) {
+    let v = (blurred[i] - pLow) / range
+    if (v < 0) v = 0
+    else if (v > 1) v = 1
+    v = Math.pow(v, gamma)
+    pixels[i] = Math.round(v * 255)
   }
 
   const working = new Float32Array(pixels)

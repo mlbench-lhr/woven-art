@@ -234,16 +234,16 @@ export default function ArtworkStepsPage() {
                     </div>
 
                     {isLoggedIn && (
-                      <div className="mt-4">
+                      <div className="mt-4 space-y-4">
                         {credits <= 0 ? (
                           <div className="space-y-4">
                             <p className="text-xs text-gray-500 leading-relaxed">
                               You don't have any credits left. You can still save the string art now and unlock the instructions later, or get more credits to unlock them immediately.
                             </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="flex flex-col gap-3">
                               <Button
                                 variant="outline"
-                                className="h-11 rounded-xl border-gray-200 font-medium text-sm"
+                                className="h-11 rounded-xl border-gray-200 font-medium text-sm w-full"
                                 disabled={!selectedVariant || saving}
                                 onClick={handleSaveWithoutInstructions}
                               >
@@ -259,13 +259,23 @@ export default function ArtworkStepsPage() {
                             </div>
                           </div>
                         ) : (
-                          <Button
-                            className="opp-button-4 h-11 w-full rounded-xl font-medium"
-                            onClick={() => setShowConfirmModal(true)}
-                            disabled={!selectedId || !selectedVariant || saving}
-                          >
-                            {saving ? "Starting..." : "Use credit and unlock instructions"}
-                          </Button>
+                          <div className="flex flex-col gap-3">
+                            <Button
+                              variant="outline"
+                              className="h-11 rounded-xl border-gray-200 font-medium text-sm w-full"
+                              disabled={!selectedVariant || saving}
+                              onClick={handleSaveWithoutInstructions}
+                            >
+                              {saving ? "Saving..." : "Save without instructions"}
+                            </Button>
+                            <Button
+                              className="opp-button-4 h-11 w-full rounded-xl font-medium"
+                              onClick={() => setShowConfirmModal(true)}
+                              disabled={!selectedId || !selectedVariant || saving}
+                            >
+                              {saving ? "Starting..." : "Use credit and unlock instructions"}
+                            </Button>
+                          </div>
                         )}
                       </div>
                     )}
@@ -309,7 +319,7 @@ export default function ArtworkStepsPage() {
                     sequence={selectedVariant.sequence}
                     totalPins={240}
                     size={360}
-                    strokeColor="#666"
+                    strokeColor="#777"
                     strokeWidth={0.2}
                   />
                 </div>

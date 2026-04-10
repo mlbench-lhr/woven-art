@@ -1,13 +1,48 @@
 "use client";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MoveHorizontal } from "lucide-react";
 
 export default function HomePage() {
   const router = useRouter();
+  const [sliderPos, setSliderPos] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMove = (e: MouseEvent | TouchEvent) => {
+    if (!isDragging || !containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    let x = 0;
+
+    if ("touches" in e) {
+      x = e.touches[0].clientX - rect.left;
+    } else {
+      x = e.clientX - rect.left;
+    }
+
+    const position = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    setSliderPos(position);
+  };
+
+  useEffect(() => {
+    const up = () => setIsDragging(false);
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", up);
+    window.addEventListener("touchmove", handleMove);
+    window.addEventListener("touchend", up);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", up);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", up);
+    };
+  }, [isDragging]);
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
@@ -35,27 +70,80 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
-          <div className="relative flex items-center justify-center">
-            <div className="relative w-[420px] h-[420px] lg:w-[520px] lg:h-[520px]">
-              <div className="absolute inset-0 rounded-full overflow-hidden">
+
+          <div className="relative flex items-center justify-center select-none">
+            <div 
+              ref={containerRef}
+              className="relative w-[360px] h-[360px] md:w-[480px] md:h-[480px] rounded-full overflow-hidden shadow-2xl border-4 border-white"
+              style={{ cursor: isDragging ? "grabbing" as const : "grab" as const }}
+              onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onTouchStart={(e) => { e.preventDefault(); setIsDragging(true); }}
+            >
+              {/* Original Image (Left Side) */}
+              <div className="absolute inset-0">
                 <Image
-                  src="/auth image 1.png"
-                  alt=""
+                  src="/home-page.png"
+                  alt="Original"
                   fill
-                  sizes="(max-width: 768px) 80vw, 520px"
+                  priority
                   className="object-cover"
                 />
               </div>
-              <div className="absolute inset-0 rounded-full overflow-hidden">
+
+              {/* String Art Image (Right Side Overlay) */}
+              <div 
+                className="absolute inset-0 z-10"
+                style={{ clipPath: `inset(0 0 0 ${sliderPos}%)` }}
+              >
                 <Image
-                  src="/auth image 1.png"
-                  alt=""
+                  src="/cropped_circle_image.png"
+                  alt="String Art"
                   fill
-                  sizes="(max-width: 768px) 80vw, 520px"
-                  className="object-cover"
-                  style={{ clipPath: "polygon(50% 0, 100% 0, 100% 100%, 50% 100%)", filter: "grayscale(100%) contrast(120%)" }}
+                  priority
+                  className="object-cover grayscale contrast-125"
+                  style={{ 
+                    filter: "grayscale(100%) contrast(150%) brightness(90%)",
+                  }}
                 />
+                {/* Simulated string art effect - overlaying a fine grid or pattern could go here */}
+                <div className="absolute inset-0 bg-black/5 pointer-events-none" />
               </div>
+
+              {/* Slider Handle Line */}
+              <div 
+                className="absolute top-0 bottom-0 z-20 w-1 bg-white"
+                style={{ left: `${sliderPos}%` }}
+              />
+
+              {/* Hand Slider Handle */}
+              <div 
+                className="absolute z-30 transition-transform duration-75 pointer-events-auto"
+                style={{ 
+                  left: `${sliderPos}%`,
+                  top: "50%",
+                  transform: `translate(-50%, -50%) ${isDragging ? "scale(0.9)" : "scale(1)"}`,
+                }}
+                onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onTouchStart={(e) => { e.preventDefault(); setIsDragging(true); }}
+              >
+                <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-xl border-2 border-gray-100 flex items-center justify-center">
+                  <div className="relative w-6 h-6 md:w-7 md:h-7">
+                    <Image
+                      src="/hand.png"
+                      alt="Drag handle"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Interaction Hint */}
+              {sliderPos === 50 && !isDragging && (
+                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-40 bg-black/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm animate-pulse pointer-events-none">
+                  Slide to compare
+                </div>
+              )}
             </div>
           </div>
         </div>

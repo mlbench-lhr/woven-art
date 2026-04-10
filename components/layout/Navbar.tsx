@@ -53,7 +53,7 @@ export default function Navbar() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between">
+      <div className="max-w-[1200px] mx-auto px-6 py-6 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <Image src="/logo.png" alt="Woven Art" width={110} height={24} />
         </Link>

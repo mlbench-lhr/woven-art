@@ -121,6 +121,7 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
    const [isInitialized, setIsInitialized] = useState(false);
    const totalPins = 240;
    const size = 420;
+  const [canvasSize, setCanvasSize] = useState(size);
   const [volume, setVolume] = useState(1);
   const [speed, setSpeed] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -174,6 +175,15 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
    const canNext = activeSequence.length ? step < activeSequence.length - 1 : false;
   const prevMapped = mapPinIndex(prevPin);
   const nextMapped = mapPinIndex(nextPin);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setCanvasSize(Math.min(size, window.innerWidth - 32));
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [size]);
 
   useEffect(() => {
     volumeRef.current = volume;
@@ -302,7 +312,7 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
        <Navbar />
        <main className="flex-1">
          <div className="max-w-[1000px] mx-auto px-6 py-10">
-           <div className="flex items-center justify-between mb-6">
+           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-6">
              <Button
                variant="outline"
                onClick={() =>
@@ -329,7 +339,7 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
                   side="bottom"
                   align="start"
                   sideOffset={10}
-                  className="w-80 rounded-2xl border-0 bg-gray-50 p-5 shadow-xl"
+                  className="w-[280px] sm:w-80 rounded-2xl border-0 bg-gray-50 p-5 shadow-xl"
                 >
                   <div className="space-y-4">
                     <div className="space-y-2">
@@ -402,27 +412,30 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
             </div>
            </div>
 
-           <div className="text-center text-sm text-gray-700 mb-4">
+           <div className="text-center text-sm text-gray-700 mb-4 px-4">
             {activeSequence.length > 0 && (
-              <>
-                Current Line: {step} | Pin{" "}
+              <div className="flex flex-wrap justify-center items-center gap-1">
+                <span>Current Line: {step} | Pin</span>
                 <span className="font-semibold" style={{ color: prevMapped.hex }}>
                   {prevMapped.label}
-                </span>{" "}
-                to{" "}
+                </span>
+                <span>to</span>
                 <span className="font-semibold" style={{ color: nextMapped.hex }}>
                   {nextMapped.label}
                 </span>
-              </>
+              </div>
             )}
            </div>
 
            <div className="flex flex-col items-center gap-6">
-             <GuidedCanvas sequence={activeSequence} totalPins={totalPins} size={size} step={step} />
+             <div className="relative w-full flex justify-center overflow-hidden">
+               <GuidedCanvas sequence={activeSequence} totalPins={totalPins} size={canvasSize} step={step} />
+             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-3 w-full max-w-[500px] px-4 mt-4">
               <Button
                 variant="outline"
+                className="flex-1 md:flex-none md:w-36 !h-12 !rounded-full border-gray-200 font-bold"
                 onClick={() => {
                   stopPlayback();
                   setStep((s) => Math.max(1, s - 1));
@@ -434,7 +447,7 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
 
               <Button
                 variant="outline"
-                className="rounded-full h-11 w-11 p-0"
+                className="rounded-full h-12 w-12 shrink-0 p-0"
                 onClick={togglePlayback}
                 disabled={activeSequence.length < 2}
                 aria-label={isPlaying ? "Pause" : "Play"}
@@ -443,7 +456,7 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
               </Button>
 
               <Button
-                className="opp-button-4"
+                className="opp-button-4 flex-1 md:flex-none md:w-36 !h-12 !rounded-full font-bold"
                 onClick={() => {
                   stopPlayback();
                   setStep((s) => Math.min((activeSequence.length || 1) - 1, s + 1));
@@ -459,19 +472,19 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
        <Footer />
 
       <Dialog open={lostOpen} onOpenChange={(o) => setLostOpen(o)}>
-        <DialogContent className="sm:max-w-[640px] rounded-3xl p-10">
+        <DialogContent className="w-[calc(100vw-32px)] sm:max-w-[640px] rounded-3xl p-6 sm:p-10">
           <DialogHeader className="text-center items-center">
-            <DialogTitle className="text-[22px] font-semibold font-sans">Need help finding your place?</DialogTitle>
-            <DialogDescription className="text-sm">
+            <DialogTitle className="text-xl sm:text-[22px] font-semibold font-sans">Need help finding your place?</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Select the color of each pin and enter its position (pins 1-60).
             </DialogDescription>
           </DialogHeader>
 
           <div className="mt-6 space-y-6">
             {lostPins.map((row, idx) => (
-              <div key={row.label} className="grid grid-cols-1 sm:grid-cols-[170px_1fr] items-center gap-4">
-                <div className="text-sm font-medium text-gray-700">{row.label}</div>
-                <div className="flex items-center gap-3">
+              <div key={row.label} className="grid grid-cols-[80px_1fr] sm:grid-cols-[170px_1fr] items-center gap-3 sm:gap-4">
+                <div className="text-sm font-medium text-gray-700 truncate">{row.label}</div>
+                <div className="flex items-center gap-2 sm:gap-3">
                   <Select
                     value={row.color || undefined}
                     onValueChange={(val) =>
@@ -480,8 +493,8 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
                       )
                     }
                   >
-                    <SelectTrigger className="h-12 rounded-2xl bg-gray-50 border-gray-100 px-5 text-sm w-[220px]">
-                      <SelectValue placeholder="Select Color" />
+                    <SelectTrigger className="h-12 rounded-2xl bg-gray-50 border-gray-100 px-3 sm:px-5 text-xs sm:text-sm w-[100px] sm:w-[220px]">
+                      <SelectValue placeholder="Color" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-100 rounded-2xl shadow-xl">
                       {COLOR_ORDER.map((c) => (
@@ -503,8 +516,8 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
                     inputMode="numeric"
                     min={1}
                     max={60}
-                    placeholder="Enter pin number"
-                    className="h-12 rounded-2xl bg-gray-50 border-gray-100 px-5 text-sm"
+                    placeholder="Pin #"
+                    className="h-12 rounded-2xl bg-gray-50 border-gray-100 px-3 sm:px-5 text-xs sm:text-sm flex-1"
                     value={row.pin}
                     onChange={(e) => {
                       const raw = e.target.value;
@@ -522,15 +535,15 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
             ))}
           </div>
 
-          <DialogFooter className="mt-10 sm:justify-end gap-4">
+          <DialogFooter className="mt-10 flex flex-col-reverse sm:flex-row sm:justify-end gap-4">
             <Button
               variant="outline"
-              className="rounded-full h-12 px-12 bg-[#F9E7E7] border-[#F9E7E7] text-red-600 hover:bg-[#F6DCDC] hover:text-red-600"
+              className="rounded-full h-12 px-12 bg-[#F9E7E7] border-[#F9E7E7] text-red-600 hover:bg-[#F6DCDC] hover:text-red-600 w-full sm:w-auto"
               onClick={() => setLostOpen(false)}
             >
               Cancel
             </Button>
-            <Button className="rounded-full h-12 px-12 bg-[#C5B4A3] hover:bg-[#B5A493]" onClick={handleRestorePosition}>
+            <Button className="rounded-full h-12 px-12 bg-[#C5B4A3] hover:bg-[#B5A493] w-full sm:w-auto" onClick={handleRestorePosition}>
               Restore My Position
             </Button>
           </DialogFooter>

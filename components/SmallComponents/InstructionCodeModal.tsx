@@ -56,8 +56,8 @@ export default function InstructionCodeModal({ trigger }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-[560px] rounded-[18px] px-8 py-7">
-        <DialogTitle className="text-[22px] font-semibold text-[#111111]">Instruction Code</DialogTitle>
+      <DialogContent className="w-[calc(100vw-32px)] sm:max-w-[560px] rounded-[18px] p-6 sm:p-10">
+        <DialogTitle className="text-xl sm:text-[22px] font-semibold text-[#111111]">Instruction Code</DialogTitle>
         <DialogDescription className="sr-only">Redeem an instruction code or buy a new one.</DialogDescription>
 
         <div className="mt-6">
@@ -65,19 +65,19 @@ export default function InstructionCodeModal({ trigger }: Props) {
             value={code}
             onChange={(v) => setCode(v.replace(/\D/g, "").slice(0, 8))}
             maxLength={8}
-            containerClassName="w-full justify-between gap-2"
+            containerClassName="w-full justify-between gap-1 sm:gap-2"
           >
             <InputOTPGroup className="w-full justify-between">
               {Array.from({ length: 8 }).map((_, idx) => (
                 <InputOTPSlot
                   key={idx}
                   index={idx}
-                  className="h-12 w-12 rounded-[10px] border-0 bg-[#f3f3f3] text-[#111111] shadow-none data-[active=true]:ring-0"
+                  className="h-10 w-10 sm:h-12 sm:w-12 rounded-[10px] border-0 bg-[#f3f3f3] text-[#111111] shadow-none data-[active=true]:ring-0"
                 />
               ))}
             </InputOTPGroup>
           </InputOTP>
-          <div className="mt-3 text-[14px] text-[#9a9a9a]">Enter the 8-digit code from the email</div>
+          <div className="mt-3 text-[13px] sm:text-[14px] text-[#9a9a9a]">Enter the 8-digit code from the email</div>
 
           <Button
             className="mt-5 h-12 w-full rounded-[14px] bg-[#c7a089] text-white hover:bg-[#b9927c]"

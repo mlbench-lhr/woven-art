@@ -65,6 +65,17 @@ export default function ArtworkStepsPage() {
   const isLoggedIn = !!user;
   const credits = (user as any)?.credits ?? 0;
 
+  const [canvasSize, setCanvasSize] = useState(360);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setCanvasSize(Math.min(360, window.innerWidth - 48));
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const handleSaveWithoutInstructions = async () => {
     if (!selectedVariant) return;
     if (!isLoggedIn) return;
@@ -197,7 +208,7 @@ export default function ArtworkStepsPage() {
                     <div className="text-sm text-gray-500 mt-0.5 leading-relaxed">Save your Woven-Arts in your account</div>
                     
                     {!isLoggedIn && (
-                      <div className="mt-4 flex gap-3">
+                      <div className="mt-4 flex flex-col sm:flex-row gap-3">
                         <Button
                           variant="outline"
                           size="sm"
@@ -314,11 +325,14 @@ export default function ArtworkStepsPage() {
           <div className="w-full flex flex-col items-center">
             {selectedVariant ? (
               <div className="flex flex-col items-center">
-                <div className="w-[360px] h-[360px] bg-white rounded-full shadow-lg border border-gray-100 overflow-hidden">
+                <div 
+                  className="relative bg-white rounded-full shadow-lg border border-gray-100 overflow-hidden"
+                  style={{ width: canvasSize, height: canvasSize }}
+                >
                   <CanvasStringArt
                     sequence={selectedVariant.sequence}
                     totalPins={240}
-                    size={360}
+                    size={canvasSize}
                     strokeColor="#777"
                     strokeWidth={0.2}
                   />

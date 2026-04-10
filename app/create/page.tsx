@@ -79,7 +79,7 @@ export default function CreatePage() {
             {image ? "Crop Your Photo" : "Upload Your Photo"}
           </h1>
 
-          <div className="mt-10 w-[360px] h-[360px] relative border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden bg-gray-50">
+          <div className="mt-10 w-full max-w-[360px] aspect-square relative border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden bg-gray-50">
             {image ? (
               <div className="absolute inset-0">
                 <Cropper
@@ -114,9 +114,10 @@ export default function CreatePage() {
             />
           </div>
 
-          <div className="mt-8 flex items-center gap-4">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-[360px]">
             <Button
               variant="outline"
+              className="w-full sm:w-auto h-12 px-10 rounded-xl border-gray-200"
               onClick={() => {
                 if (image) {
                   setImage(null);
@@ -127,8 +128,8 @@ export default function CreatePage() {
             >
               Back
             </Button>
-            <Button className="opp-button-4" onClick={handleNext} disabled={!image}>
-              Next
+            <Button className="opp-button-4 w-full sm:w-auto h-12 px-10 rounded-xl" onClick={handleNext} disabled={!image}>
+              Next Step
             </Button>
           </div>
         </div>

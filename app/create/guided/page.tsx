@@ -1,12 +1,12 @@
- "use client";
+"use client";
 
- import { useEffect, useMemo, useRef, useState } from "react";
- import { useSearchParams, useRouter } from "next/navigation";
- import Navbar from "@/components/layout/Navbar";
- import Footer from "@/components/layout/Footer";
- import { Button } from "@/components/ui/button";
- import { useVariants } from "@/app/Context/VariantsContext";
- import GuidedInfoModal from "@/components/SmallComponents/GuidedInfoModal";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import { Button } from "@/components/ui/button";
+import { useVariants } from "@/app/Context/VariantsContext";
+import GuidedInfoModal from "@/components/SmallComponents/GuidedInfoModal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { FastForward, Pause, Play, RotateCcw, Settings, Volume2 } from "lucide-react";
 import { mapIndexToColor } from "@/lib/mappers";
+import CongratulationsModal from "@/components/SmallComponents/CongratulationsModal";
 
 type ColorName = "Green" | "Yellow" | "Red" | "Blue";
 
@@ -28,6 +29,35 @@ const COLOR_HEX: Record<ColorName, string> = {
 
 function clampNumber(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
+}
+
+function pickFemaleVoice(voices: SpeechSynthesisVoice[]) {
+  const preferredNameHints = [
+    "female",
+    "samantha",
+    "victoria",
+    "karen",
+    "moira",
+    "tessa",
+    "zira",
+    "aria",
+    "jenny",
+    "serena",
+    "amelie",
+    "ava",
+    "joanna",
+    "google uk english female",
+    "google us english female",
+  ];
+  const candidates = voices.filter((v) => String(v.lang || "").toLowerCase().startsWith("en"));
+  const scored = candidates.map((v) => {
+    const name = String(v.name || "").toLowerCase();
+    const hintIdx = preferredNameHints.findIndex((h) => name.includes(h));
+    const score = hintIdx === -1 ? 999 : hintIdx;
+    return { v, score };
+  });
+  scored.sort((a, b) => a.score - b.score);
+  return scored[0]?.v ?? candidates[0] ?? voices[0] ?? null;
 }
 
 function parseMappedPin(mapped: string): { color: ColorName | null; pin: number | null } {
@@ -58,69 +88,73 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
   return -1;
 }
 
- export default function GuidedCreatePage() {
-   const params = useSearchParams();
-   const router = useRouter();
-   const { variants, setVariants } = useVariants();
-   const variantId = params.get("variant");
-   const artId = params.get("art");
- 
-   const [serverSequence, setServerSequence] = useState<number[] | null>(null);
-   const [serverTotalLines, setServerTotalLines] = useState<number | null>(null);
-   const [serverUnlocked, setServerUnlocked] = useState<boolean>(false);
-   const [serverProgress, setServerProgress] = useState<number>(1);
-   const [loadingArt, setLoadingArt] = useState<boolean>(false);
-  const [artLoaded, setArtLoaded] = useState<boolean>(false);
+export default function GuidedCreatePage() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const { variants, setVariants } = useVariants();
+  const variantId = params.get("variant");
+  const artId = params.get("art");
 
-   useEffect(() => {
+  const [serverSequence, setServerSequence] = useState<number[] | null>(null);
+  const [serverTotalLines, setServerTotalLines] = useState<number | null>(null);
+  const [serverUnlocked, setServerUnlocked] = useState<boolean>(false);
+  const [serverProgress, setServerProgress] = useState<number>(1);
+  const [loadingArt, setLoadingArt] = useState<boolean>(false);
+  const [artLoaded, setArtLoaded] = useState<boolean>(false);
+  const [showCongratulationsModal, setShowCongratulationsModal] = useState(false);
+
+  useEffect(() => {
     if (variants.length === 0) {
-       try {
-         const raw = sessionStorage.getItem("stringArtVariants");
-         if (raw) {
-           const parsed = JSON.parse(raw);
-           if (Array.isArray(parsed)) setVariants(parsed);
-         }
-       } catch {}
+      try {
+        const raw = sessionStorage.getItem("stringArtVariants");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) setVariants(parsed);
+        }
+      } catch { }
     }
-   }, [variants.length, setVariants]);
- 
-   useEffect(() => {
-     const load = async () => {
-       if (!artId) return;
-       setLoadingArt(true);
-       setArtLoaded(false);
-       try {
-         const res = await fetch(`/api/artwork/${artId}`, { credentials: "include" });
-         if (!res.ok) return;
-         const j = await res.json();
-         setServerSequence(j.item?.finalSequence || null);
-         setServerTotalLines(j.item?.totalLines || null);
-         setServerUnlocked(!!j.item?.unlocked);
-         setServerProgress(j.progress?.currentStep || 1);
-       } finally {
-         setLoadingArt(false);
-         setArtLoaded(true);
-       }
-     };
-     load();
-   }, [artId]);
- 
-   useEffect(() => {
+  }, [variants.length, setVariants]);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!artId) return;
+      setLoadingArt(true);
+      setArtLoaded(false);
+      try {
+        const res = await fetch(`/api/artwork/${artId}`, { credentials: "include" });
+        if (!res.ok) return;
+        const j = await res.json();
+        setServerSequence(j.item?.finalSequence || null);
+        setServerTotalLines(j.item?.totalLines || null);
+        setServerUnlocked(!!j.item?.unlocked);
+        setServerProgress(j.progress?.currentStep || 1);
+      } finally {
+        setLoadingArt(false);
+        setArtLoaded(true);
+      }
+    };
+    load();
+  }, [artId]);
+
+  useEffect(() => {
     if (!artId) return;
     if (!artLoaded) return;
     if (serverUnlocked) return;
     router.replace("/dashboard/artworks");
   }, [artId, artLoaded, serverUnlocked, router]);
 
-   const variant = useMemo(
-     () => variants.find((v) => v.id === variantId) || variants[0],
-     [variants, variantId]
-   );
+  const variant = useMemo(
+    () => variants.find((v) => v.id === variantId) || variants[0],
+    [variants, variantId]
+  );
 
-   const [step, setStep] = useState(1);
-   const [isInitialized, setIsInitialized] = useState(false);
-   const totalPins = 240;
-   const size = 420;
+  const [step, setStep] = useState(1);
+  const [isEditingLine, setIsEditingLine] = useState(false);
+  const [lineDraft, setLineDraft] = useState("");
+  const lineInputRef = useRef<HTMLInputElement>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const totalPins = 240;
+  const size = 420;
   const [canvasSize, setCanvasSize] = useState(size);
   const [volume, setVolume] = useState(1);
   const [speed, setSpeed] = useState(1);
@@ -128,6 +162,7 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
   const playTokenRef = useRef(0);
   const volumeRef = useRef(volume);
   const speedRef = useRef(speed);
+  const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
   const [lostOpen, setLostOpen] = useState(false);
   const [lostPins, setLostPins] = useState<
     { label: "Last Pin" | "Second Last Pin" | "Third Last Pin"; color: ColorName | ""; pin: string }[]
@@ -137,44 +172,54 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
     { label: "Third Last Pin", color: "", pin: "" },
   ]);
 
-   useEffect(() => {
-     if (artId) {
-       if (!serverSequence) return;
-       setStep(Math.max(1, Math.min(serverProgress, serverSequence.length - 1)));
-       setIsInitialized(true);
-       return;
-     }
-     if (!variant) {
-       router.replace("/create/variant");
-       return;
-     }
-     setStep(Math.min(1, variant.sequence.length - 1));
-     setIsInitialized(true);
-   }, [artId, serverProgress, serverSequence, variant, router]);
- 
-   useEffect(() => {
-     if (!artId || !serverSequence || !isInitialized) return;
-     
-     // Only save if the current step is different from the server progress 
-     // or if we've already started moving
-     const save = async () => {
-       await fetch("/api/artwork/progress", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         credentials: "include",
-         body: JSON.stringify({ artId, currentStep: step })
-       });
-     };
-     save();
-   }, [artId, step, serverSequence, isInitialized]);
+  useEffect(() => {
+    if (artId) {
+      if (!serverSequence) return;
+      setStep(Math.max(1, Math.min(serverProgress, serverSequence.length - 1)));
+      setIsInitialized(true);
+      return;
+    }
+    if (!variant) {
+      router.replace("/create/variant");
+      return;
+    }
+    setStep(Math.min(1, variant.sequence.length - 1));
+    setIsInitialized(true);
+  }, [artId, serverProgress, serverSequence, variant, router]);
 
-   const activeSequence = artId && serverSequence ? serverSequence : (variant?.sequence || []);
-   const prevPin = activeSequence.length ? activeSequence[Math.max(0, step - 1)] : 0;
-   const nextPin = activeSequence.length ? activeSequence[step] : 1;
-   const canPrev = step > 1;
-   const canNext = activeSequence.length ? step < activeSequence.length - 1 : false;
+  useEffect(() => {
+    if (!artId || !serverSequence || !isInitialized) return;
+
+    // Only save if the current step is different from the server progress 
+    // or if we've already started moving
+    const save = async () => {
+      await fetch("/api/artwork/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ artId, currentStep: step })
+      });
+    };
+    save();
+  }, [artId, step, serverSequence, isInitialized]);
+
+  const activeSequence = artId && serverSequence ? serverSequence : (variant?.sequence || []);
+  const maxStep = Math.max(1, activeSequence.length - 1);
+  const displayStep = Math.min(step, maxStep);
+  const prevPin = activeSequence.length ? activeSequence[Math.max(0, displayStep - 1)] : 0;
+  const nextPin = activeSequence.length ? activeSequence[displayStep] : 1;
+  const canPrev = step > 1;
+  const canNext = activeSequence.length ? step <= maxStep : false;
   const prevMapped = mapPinIndex(prevPin);
   const nextMapped = mapPinIndex(nextPin);
+  const currentLine = clampNumber(step - 1, 0, maxStep);
+  const isLastLine = currentLine === maxStep - 1;
+  const isDone = currentLine === maxStep;
+
+  useEffect(() => {
+    if (isEditingLine) return;
+    setLineDraft(String(clampNumber(step - 1, 0, Math.max(0, maxStep))));
+  }, [isEditingLine, step, maxStep]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -192,6 +237,19 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
   useEffect(() => {
     speedRef.current = speed;
   }, [speed]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const synth = window.speechSynthesis;
+    const load = () => {
+      voiceRef.current = pickFemaleVoice(synth.getVoices());
+    };
+    load();
+    synth.onvoiceschanged = load;
+    return () => {
+      synth.onvoiceschanged = null;
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -218,7 +276,13 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
       const synth = window.speechSynthesis;
       const u = new SpeechSynthesisUtterance(text);
       u.volume = clampNumber(volumeRef.current, 0, 1);
-      u.rate = clampNumber(speedRef.current, 0.5, 2);
+      u.rate = 1;
+      if (voiceRef.current) {
+        u.voice = voiceRef.current;
+        u.lang = voiceRef.current.lang;
+      } else {
+        u.lang = "en-US";
+      }
       u.onend = () => resolve();
       u.onerror = () => resolve();
       synth.speak(u);
@@ -236,14 +300,15 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
     setIsPlaying(true);
 
     const run = async () => {
-      for (let s = clampNumber(step, 1, activeSequence.length - 1); s < activeSequence.length; s++) {
+      const lastPlayableStep = Math.min(maxStep, maxStep);
+      for (let s = clampNumber(step, 1, lastPlayableStep); s <= lastPlayableStep; s++) {
         if (playTokenRef.current !== token) break;
         const fromIdx = activeSequence[s - 1];
         const toIdx = activeSequence[s];
         const from = mapPinIndex(fromIdx);
         const to = mapPinIndex(toIdx);
         setStep(s);
-        const text = from.color && from.pin && to.color && to.pin ? `${from.color} ${from.pin} to ${to.color} ${to.pin}` : `Pin ${fromIdx} to ${toIdx}`;
+        const text = to.color && to.pin ? `${to.color} ${to.pin}` : `Pin ${toIdx}`;
         await speak(text, token);
         if (playTokenRef.current !== token) break;
 
@@ -261,7 +326,11 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
 
         await new Promise((r) => setTimeout(r, pauseMs));
       }
-      if (playTokenRef.current === token) setIsPlaying(false);
+      if (playTokenRef.current === token) {
+        setIsPlaying(false);
+        setStep(maxStep);
+        setShowCongratulationsModal(true);
+      }
     };
 
     run();
@@ -306,24 +375,28 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
     toast.success("Position restored.");
   };
 
-   return (
-     <div className="min-h-screen bg-white flex flex-col">
-       <GuidedInfoModal autoOpen />
-       <Navbar />
-       <main className="flex-1">
-         <div className="max-w-[1000px] mx-auto px-6 py-10">
-           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-6">
-             <Button
-               variant="outline"
-               onClick={() =>
-                 artId
-                   ? router.push("/dashboard/artworks")
-                   : router.push(`/create/artwork?variant=${encodeURIComponent(variantId || variant?.id || "")}`)
-               }
-             >
-               Back
-             </Button>
-             <h1 className="text-2xl md:text-3xl font-semibold">Create Artwork</h1>
+  return (
+    <div className="min-h-screen bg-white flex flex-col">
+      <GuidedInfoModal autoOpen />
+      <CongratulationsModal
+        open={showCongratulationsModal}
+        onClose={() => setShowCongratulationsModal(false)}
+      />
+      <Navbar />
+      <main className="flex-1">
+        <div className="max-w-[1000px] mx-auto px-4 py-10">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-6">
+            <Button
+              variant="outline"
+              onClick={() =>
+                artId
+                  ? router.push("/dashboard/artworks")
+                  : router.push(`/create/artwork?variant=${encodeURIComponent(variantId || variant?.id || "")}`)
+              }
+            >
+              Back
+            </Button>
+            <h1 className="text-2xl md:text-3xl font-semibold">Create Artwork</h1>
             <div className="flex items-center gap-3">
               <Popover>
                 <PopoverTrigger asChild>
@@ -410,27 +483,70 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
                 I&apos;m Lost
               </Button>
             </div>
-           </div>
+          </div>
 
-           <div className="text-center text-sm text-gray-700 mb-4 px-4">
+          <div className="text-center text-sm text-gray-700 mb-4 px-4">
             {activeSequence.length > 0 && (
-              <div className="flex flex-wrap justify-center items-center gap-1">
-                <span>Current Line: {step} | Pin</span>
-                <span className="font-semibold" style={{ color: prevMapped.hex }}>
-                  {prevMapped.label}
-                </span>
-                <span>to</span>
-                <span className="font-semibold" style={{ color: nextMapped.hex }}>
-                  {nextMapped.label}
-                </span>
+              <div className="flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-2 sm:gap-y-1">
+                <div className="flex items-center gap-1">
+                  <span className="underline underline-offset-4 decoration-2">Current Line:</span>
+                  {isEditingLine ? (
+                    <input
+                      ref={lineInputRef}
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={maxStep}
+                      value={lineDraft}
+                      onChange={(e) => setLineDraft(e.target.value)}
+                      onBlur={() => {
+                        const n = Number(lineDraft);
+                        if (Number.isFinite(n)) setStep(clampNumber(Math.trunc(n) + 1, 1, maxStep + 1));
+                        setIsEditingLine(false);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.currentTarget.blur();
+                        if (e.key === "Escape") {
+                          setLineDraft(String(step - 1));
+                          setIsEditingLine(false);
+                        }
+                      }}
+                      className="w-[72px] text-center font-bold underline decoration-2 underline-offset-4 outline-none bg-transparent"
+                      autoFocus
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      className="font-bold underline cursor-pointer hover:text-[#C5B4A3] transition-colors decoration-2 underline-offset-4"
+                      onClick={() => {
+                        setIsEditingLine(true);
+                        setTimeout(() => lineInputRef.current?.select(), 0);
+                      }}
+                    >
+                      {step}
+                    </button>
+                  )}
+                  <span className="font-medium text-gray-500">/{maxStep}</span>
+                </div>
+                <span className="text-gray-400 hidden sm:inline">|</span>
+                <div className="flex items-center gap-1">
+                  <span>Pin</span>
+                  <span className="font-semibold" style={{ color: prevMapped.hex }}>
+                    {prevMapped.label}
+                  </span>
+                  <span>to</span>
+                  <span className="font-semibold" style={{ color: nextMapped.hex }}>
+                    {nextMapped.label}
+                  </span>
+                </div>
               </div>
             )}
-           </div>
+          </div>
 
-           <div className="flex flex-col items-center gap-6">
-             <div className="relative w-full flex justify-center overflow-hidden">
-               <GuidedCanvas sequence={activeSequence} totalPins={totalPins} size={canvasSize} step={step} />
-             </div>
+          <div className="flex flex-col items-center gap-6">
+            <div className="relative w-full flex justify-center overflow-hidden">
+              <GuidedCanvas sequence={activeSequence} totalPins={totalPins} size={canvasSize} step={step} />
+            </div>
 
             <div className="flex items-center justify-center gap-3 w-full max-w-[500px] px-4 mt-4">
               <Button
@@ -442,8 +558,8 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
                 }}
                 disabled={!canPrev}
               >
-                 Last Step
-               </Button>
+                Last Step
+              </Button>
 
               <Button
                 variant="outline"
@@ -459,17 +575,21 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
                 className="opp-button-4 flex-1 md:flex-none md:w-36 !h-12 !rounded-full font-bold"
                 onClick={() => {
                   stopPlayback();
-                  setStep((s) => Math.min((activeSequence.length || 1) - 1, s + 1));
+                  if (step >= maxStep) {
+                    setShowCongratulationsModal(true);
+                  } else {
+                    setStep((s) => s + 1);
+                  }
                 }}
                 disabled={!canNext}
               >
-                 Next Step
-               </Button>
-             </div>
-           </div>
-         </div>
-       </main>
-       <Footer />
+                {step >= maxStep ? "Finish" : "Next Step"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </main>
+      <Footer />
 
       <Dialog open={lostOpen} onOpenChange={(o) => setLostOpen(o)}>
         <DialogContent className="w-[calc(100vw-32px)] sm:max-w-[640px] rounded-3xl p-6 sm:p-10">
@@ -549,11 +669,11 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
           </DialogFooter>
         </DialogContent>
       </Dialog>
-     </div>
-   );
+    </div>
+  );
 }
 
- function GuidedCanvas({
+function GuidedCanvas({
   sequence,
   totalPins,
   size,
@@ -563,30 +683,36 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
   totalPins: number;
   size: number;
   step: number;
- }) {
-   const canvasRef = useRef<HTMLCanvasElement>(null);
+}) {
+  const renderStep = Math.min(step, sequence.length > 0 ? sequence.length - 1 : 1);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-   useEffect(() => {
-     const canvas = canvasRef.current;
-     if (!canvas) return;
-     const ctx = canvas.getContext("2d");
-     if (!ctx) return;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-     ctx.clearRect(0, 0, size, size);
+    ctx.clearRect(0, 0, size, size);
     const cx = size / 2;
     const cy = size / 2;
-    const margin = 46;
-    const radius = size / 2 - margin;
+    const ringWidth = 14;
+    const bubbleRadius = 20;
+    const desiredLabelGap = 8;
+    const maxLabelRadius = size / 2 - bubbleRadius - 2;
+    const maxRadiusForLabels = maxLabelRadius - (ringWidth / 2 + bubbleRadius + desiredLabelGap);
+    const radius = clampNumber(Math.min(size / 2 - 8, maxRadiusForLabels), 40, size / 2 - 8);
+    const ringOuter = radius + ringWidth / 2;
+    const labelRadius = Math.min(ringOuter + bubbleRadius + desiredLabelGap, maxLabelRadius);
 
-     const pins: { x: number; y: number }[] = [];
-     for (let i = 0; i < totalPins; i++) {
-       const angle = (2 * Math.PI * i) / totalPins - Math.PI / 2;
+    const pins: { x: number; y: number }[] = [];
+    for (let i = 0; i < totalPins; i++) {
+      const angle = (2 * Math.PI * i) / totalPins - Math.PI / 2;
       const x = cx + radius * Math.cos(angle);
       const y = cy + radius * Math.sin(angle);
       pins.push({ x, y });
-     }
+    }
 
-    const ringWidth = 12;
     ctx.lineWidth = ringWidth;
     for (let ci = 0; ci < COLOR_ORDER.length; ci++) {
       const startIdx = (totalPins / COLOR_ORDER.length) * ci;
@@ -599,12 +725,19 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
       ctx.stroke();
     }
 
+    // Dotted circle exactly in the center of the colored ring
+    const dottedRadius = radius;
+    const arrowRadius = radius;
     ctx.save();
-    ctx.setLineDash([3, 3]);
-    ctx.strokeStyle = "#111827";
+    const circumference = 2 * Math.PI * dottedRadius;
+    const desiredDots = totalPins; // or 120 / 240 etc
+    const dashLength = circumference / (desiredDots * 2);
+
+    ctx.setLineDash([dashLength, dashLength]);
+    ctx.strokeStyle = "rgb(8, 9, 10)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.arc(cx, cy, radius - ringWidth * 0.65, 0, 2 * Math.PI);
+    ctx.arc(cx, cy, dottedRadius, 0, 2 * Math.PI);
     ctx.stroke();
     ctx.restore();
 
@@ -623,52 +756,59 @@ function findSequenceEndIndex(sequence: number[], third: number, second: number,
       ctx.stroke();
     }
 
-     if (sequence.length >= 2 && step >= 1) {
-      const fromIdx = sequence[step - 1];
-      const toIdx = sequence[step];
+    if (sequence.length >= 2 && renderStep >= 1) {
+      const fromIdx = sequence[renderStep - 1];
+      const toIdx = sequence[renderStep];
       if (fromIdx < 0 || toIdx < 0 || fromIdx >= pins.length || toIdx >= pins.length) return;
-      const from = pins[fromIdx];
-      const to = pins[toIdx];
-       ctx.strokeStyle = "#000";
-       ctx.lineWidth = 3;
-       ctx.beginPath();
-       ctx.moveTo(from.x, from.y);
-       ctx.lineTo(to.x, to.y);
-       ctx.stroke();
 
-       const dx = to.x - from.x;
-       const dy = to.y - from.y;
-       const angle = Math.atan2(dy, dx);
-       const arrowLen = 14;
-       ctx.beginPath();
-       ctx.moveTo(to.x, to.y);
-       ctx.lineTo(to.x - arrowLen * Math.cos(angle - Math.PI / 7), to.y - arrowLen * Math.sin(angle - Math.PI / 7));
-       ctx.lineTo(to.x - arrowLen * Math.cos(angle + Math.PI / 7), to.y - arrowLen * Math.sin(angle + Math.PI / 7));
-       ctx.closePath();
-       ctx.fillStyle = "#000";
-       ctx.fill();
-     }
+      // Calculate points slightly inside the ring for the arrow
+      const angleFrom = (2 * Math.PI * fromIdx) / totalPins - Math.PI / 2;
+      const angleTo = (2 * Math.PI * toIdx) / totalPins - Math.PI / 2;
+      const fromX = cx + arrowRadius * Math.cos(angleFrom);
+      const fromY = cy + arrowRadius * Math.sin(angleFrom);
+      const toX = cx + arrowRadius * Math.cos(angleTo);
+      const toY = cy + arrowRadius * Math.sin(angleTo);
 
-     if (sequence.length >= 2 && step >= 1) {
-      const aIdx = sequence[step - 1];
-      const bIdx = sequence[step];
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+
+      const dx = toX - fromX;
+      const dy = toY - fromY;
+      const angle = Math.atan2(dy, dx);
+      const arrowLen = 14;
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - arrowLen * Math.cos(angle - Math.PI / 7), toY - arrowLen * Math.sin(angle - Math.PI / 7));
+      ctx.lineTo(toX - arrowLen * Math.cos(angle + Math.PI / 7), toY - arrowLen * Math.sin(angle + Math.PI / 7));
+      ctx.closePath();
+      ctx.fillStyle = "#000";
+      ctx.fill();
+    }
+
+    if (sequence.length >= 2 && renderStep >= 1) {
+      const aIdx = sequence[renderStep - 1];
+      const bIdx = sequence[renderStep];
       if (aIdx < 0 || bIdx < 0 || aIdx >= pins.length || bIdx >= pins.length) return;
       const aMeta = mapPinIndex(aIdx);
       const bMeta = mapPinIndex(bIdx);
       const aAngle = (2 * Math.PI * aIdx) / totalPins - Math.PI / 2;
       const bAngle = (2 * Math.PI * bIdx) / totalPins - Math.PI / 2;
-      const labelRadius = radius + ringWidth / 2 + 14;
+
       const ax = cx + labelRadius * Math.cos(aAngle);
       const ay = cy + labelRadius * Math.sin(aAngle);
       const bx = cx + labelRadius * Math.cos(bAngle);
       const by = cy + labelRadius * Math.sin(bAngle);
       drawPinLabel(ctx, ax, ay, aMeta.pin ? String(aMeta.pin) : String(aIdx), aMeta.hex);
       drawPinLabel(ctx, bx, by, bMeta.pin ? String(bMeta.pin) : String(bIdx), bMeta.hex);
-     }
-   }, [sequence, totalPins, size, step]);
+    }
+  }, [sequence, totalPins, size, renderStep]);
 
-   return <canvas ref={canvasRef} width={size} height={size} className="rounded-full" />;
- }
+  return <canvas ref={canvasRef} width={size} height={size} className="rounded-full" />;
+}
 
 function drawPinLabel(ctx: CanvasRenderingContext2D, x: number, y: number, text: string, fill: string) {
   ctx.fillStyle = fill;
@@ -683,4 +823,4 @@ function drawPinLabel(ctx: CanvasRenderingContext2D, x: number, y: number, text:
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(text, x, y);
- }
+}

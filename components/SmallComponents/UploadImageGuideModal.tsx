@@ -35,13 +35,13 @@ export default function UploadImageGuideModal({ triggerComponent, autoOpen }: Pr
           {typeof TriggerComponent === "function" ? <TriggerComponent /> : TriggerComponent}
         </DialogTrigger>
       ) : null}
-      <DialogContent className="w-[calc(100vw-32px)] sm:max-w-[520px] rounded-3xl p-6 sm:p-10">
+      <DialogContent className="w-[calc(100vw-32px)] sm:max-w-[520px] rounded-3xl p-6 max-h-[100vh]">
         <DialogTitle className="text-xl sm:text-2xl font-bold">What Image Should I Use?</DialogTitle>
         <DialogDescription className="text-xs sm:text-sm">
           The best image for a Woven-Art artwork is a close-up of a single person or product with good contrast lighting.
         </DialogDescription>
 
-        <div className="mt-6 space-y-8">
+        <div className="mt-1 space-y-4">
           <div>
             <div className="flex items-center gap-2 text-green-600 font-medium mb-3">
               <CheckCircle2 className="text-green-600 size-5" />

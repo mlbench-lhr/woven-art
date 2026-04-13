@@ -11,7 +11,7 @@ type RequestBody = {
   seed?: number
 }
 
-const ALLOWED_LINES = [2700, 3300, 3500]
+const ALLOWED_LINES = [2700, 3300, 3700]
 const TOTAL_PINS = 240
 
 export async function POST(req: NextRequest) {

@@ -17,6 +17,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!Array.isArray(sequence) || sequence.length !== Number(totalLines) + 1) {
+      return NextResponse.json(
+        { error: "Invalid sequence length. Regenerate the artwork and try again." },
+        { status: 400 }
+      );
+    }
+
     // Authenticate from cookie
     const token = req.cookies.get("auth_token")?.value;
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

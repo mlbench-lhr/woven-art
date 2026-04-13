@@ -13,7 +13,7 @@ export default function SelectVariantPage() {
   const router = useRouter();
   const { variants, setVariants } = useVariants();
   const [selected, setSelected] = useState<string | null>(null);
-  const [note, setNote] = useState<string>("This can take 4-8 minutes. Please keep this tab open, leaving or closing the page will pause generation.");
+  const [note, setNote] = useState<string>("This can take 2-4 minutes. Please keep this tab open, leaving or closing the page will pause generation.");
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [generating, setGenerating] = useState(false);
   const generatingRef = useRef(false);
@@ -42,12 +42,19 @@ export default function SelectVariantPage() {
     const run = async () => {
       setGenerating(true);
       if (variants.length > 0) {
+        if (variants.some((v) => typeof v?.lines !== "number" || !Array.isArray(v?.sequence) || v.sequence.length !== v.lines + 1)) {
+          try {
+            sessionStorage.removeItem("stringArtVariants");
+          } catch {}
+          setVariants([] as any);
+        } else {
         const initialProgress: Record<string, number> = {};
         for (const v of variants) initialProgress[v.id] = 0;
         setProgress(initialProgress);
         animateStoredVariants(variants, setProgress);
         setGenerating(false);
         return;
+        }
       }
 
       let stored: any[] | null = null;
@@ -59,7 +66,7 @@ export default function SelectVariantPage() {
         }
       } catch {}
 
-      if (stored) {
+      if (stored && stored.every((v) => typeof v?.lines === "number" && Array.isArray(v?.sequence) && v.sequence.length === v.lines + 1)) {
         setVariants(stored as any);
         const initialProgress: Record<string, number> = {};
         for (const v of stored) initialProgress[v.id] = 0;
@@ -67,6 +74,11 @@ export default function SelectVariantPage() {
         animateStoredVariants(stored as any, setProgress);
         setGenerating(false);
         return;
+      }
+      if (stored) {
+        try {
+          sessionStorage.removeItem("stringArtVariants");
+        } catch {}
       }
 
       generatingRef.current = true;
@@ -81,7 +93,7 @@ export default function SelectVariantPage() {
         const cfgs = [
           { id: "v1", lines: 2700, seed: 0 },
           { id: "v2", lines: 3300, seed: 61 },
-          { id: "v3", lines: 3500, seed: 137 },
+          { id: "v3", lines: 3700, seed: 137 },
         ];
 
         const live = cfgs.map((c) => ({ id: c.id, lines: c.lines, seed: c.seed, sequence: [] as number[] }));
@@ -148,25 +160,25 @@ export default function SelectVariantPage() {
             </div>
           )}
 
-          <div className="mt-8 flex items-center justify-center gap-6 flex-wrap">
+          <div className="mt-8 flex items-center justify-center gap-4 flex-wrap">
             {variants.map((v) => (
               <button
                 key={v.id}
                 onClick={() => setSelected(v.id)}
-                className={`relative w-[80px] h-[80px] rounded-full overflow-hidden border transition-all ${
-                  selected === v.id
-                    ? "border-[3px] border-[#C5B4A3] shadow-md scale-110"
-                    : "border-gray-300 hover:border-[#C5B4A3]"
+                className={`relative w-20 h-20 rounded-full overflow-hidden border border-gray-200 bg-white transition-shadow ${
+                  selected === v.id ? "ring-4 ring-[#C5B4A3] shadow-md" : "hover:shadow-sm"
                 }`}
               >
-                <ProgressiveStringPreview
-                  sequence={v.sequence}
-                  totalPins={240}
-                  size={80}
-                  strokeColor="#888"
-                  strokeWidth={0.05}
-                  progressLen={progress[v.id] ?? 0}
-                />
+                <div className="w-full h-full rounded-full overflow-hidden">
+                  <ProgressiveStringPreview
+                    sequence={v.sequence}
+                    totalPins={240}
+                    size={80}
+                    strokeColor="#888"
+                    strokeWidth={0.05}
+                    progressLen={progress[v.id] ?? 0}
+                  />
+                </div>
               </button>
             ))}
           </div>
@@ -399,4 +411,7 @@ async function generateStringArtProgressive({
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
     }
   }
+
+  sequenceOut.push(current);
+  onLine(sequenceOut.length - 1);
 }

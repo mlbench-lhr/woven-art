@@ -55,11 +55,28 @@ export default function ArtworkStepsPage() {
         const raw = sessionStorage.getItem("stringArtVariants");
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) setVariants(parsed);
+          if (
+            Array.isArray(parsed) &&
+            parsed.length > 0 &&
+            parsed.every((v) => typeof v?.lines === "number" && Array.isArray(v?.sequence) && v.sequence.length === v.lines + 1)
+          ) {
+            setVariants(parsed);
+          } else {
+            sessionStorage.removeItem("stringArtVariants");
+          }
         }
       } catch {}
     }
   }, [variants.length, setVariants]);
+
+  useEffect(() => {
+    if (variants.length === 0) return;
+    if (variants.every((v: any) => typeof v?.lines === "number" && Array.isArray(v?.sequence) && v.sequence.length === v.lines + 1)) return;
+    try {
+      sessionStorage.removeItem("stringArtVariants");
+    } catch {}
+    setVariants([] as any);
+  }, [variants, setVariants]);
 
   const selectedVariant = variants.find((v) => v.id === selectedId);
   const isLoggedIn = !!user;

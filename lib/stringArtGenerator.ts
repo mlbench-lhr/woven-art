@@ -165,7 +165,7 @@ export function generateStringArt({
       bestLine = getLine(current, bestPin)
     }
 
-    const weight = 12 + (step / totalLines) * 20
+    const weight = 10 + (step / totalLines) * 15
 
     for (const idx of bestLine) {
       working[idx] = Math.min(
@@ -176,6 +176,8 @@ export function generateStringArt({
 
     current = bestPin
   }
+
+  sequence.push(current)
 
   return sequence
 }

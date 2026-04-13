@@ -25,6 +25,17 @@ export default function SelectVariantPage() {
   const current = useMemo(() => variants.find((v) => v.id === selected) || null, [variants, selected]);
   const currentProgress = current ? (progress[current.id] ?? 0) : 0;
 
+  const [canvasSize, setCanvasSize] = useState(360);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setCanvasSize(Math.min(360, window.innerWidth - 48));
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     if (generatingRef.current) return;
 
@@ -35,7 +46,6 @@ export default function SelectVariantPage() {
         for (const v of variants) initialProgress[v.id] = 0;
         setProgress(initialProgress);
         animateStoredVariants(variants, setProgress);
-        setNote("");
         setGenerating(false);
         return;
       }
@@ -55,7 +65,6 @@ export default function SelectVariantPage() {
         for (const v of stored) initialProgress[v.id] = 0;
         setProgress(initialProgress);
         animateStoredVariants(stored as any, setProgress);
-        setNote("");
         setGenerating(false);
         return;
       }
@@ -99,7 +108,6 @@ export default function SelectVariantPage() {
         try {
           sessionStorage.setItem("stringArtVariants", JSON.stringify(live));
         } catch {}
-        setNote("");
       } catch (e) {
         console.error(e);
       } finally {
@@ -121,20 +129,26 @@ export default function SelectVariantPage() {
           </h1>
 
           {note && <div className="mt-6 text-sm text-gray-600 text-center max-w-[620px]">{note}</div>}
+
           {current && (
             <div className="mt-10 w-full flex justify-center">
-              <ProgressiveStringPreview
-                sequence={current.sequence}
-                totalPins={240}
-                size={360}
-                strokeColor="#777"
-                strokeWidth={0.2}
-                progressLen={currentProgress}
-              />
+              <div 
+                className="relative bg-white rounded-full shadow-lg border border-gray-100 overflow-hidden"
+                style={{ width: canvasSize, height: canvasSize }}
+              >
+                <ProgressiveStringPreview
+                  sequence={current.sequence}
+                  totalPins={240}
+                  size={canvasSize}
+                  strokeColor="#777"
+                  strokeWidth={0.2}
+                  progressLen={currentProgress}
+                />
+              </div>
             </div>
           )}
 
-          <div className="mt-8 flex items-center gap-6">
+          <div className="mt-8 flex items-center justify-center gap-6 flex-wrap">
             {variants.map((v) => (
               <button
                 key={v.id}
@@ -157,7 +171,7 @@ export default function SelectVariantPage() {
             ))}
           </div>
 
-          <div className="mt-10 flex items-center gap-4">
+          <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
             <Button variant="outline" onClick={() => router.push("/create")}>
               Back
             </Button>

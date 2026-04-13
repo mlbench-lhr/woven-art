@@ -93,3 +93,23 @@ export const sendInstructionCodeEmail = async (email: string, code: string, cred
     html: htmlContent,
   });
 };
+
+export const sendContactEmail = async (name: string, email: string, message: string) => {
+  const transporter = getTransporter();
+  const htmlContent = `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #333;">New Contact Form Submission</h2>
+    <p><strong>Name:</strong> ${name}</p>
+    <p><strong>Email:</strong> ${email}</p>
+    <p><strong>Message:</strong></p>
+    <p style="white-space: pre-wrap;">${message}</p>
+  </div>`;
+
+  await transporter.sendMail({
+    from: EMAIL_FROM,
+    to: "contact@wovenart.store",
+    replyTo: email,
+    subject: `New Contact Form Submission from ${name}`,
+    html: htmlContent,
+  });
+};

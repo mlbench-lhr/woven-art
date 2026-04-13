@@ -44,6 +44,8 @@ export default function MyArtworksPage() {
   const [confirmUnlockId, setConfirmUnlockId] = useState<string | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const limit = 9;
 
   useEffect(() => {
     if (!user) return;
@@ -62,6 +64,17 @@ export default function MyArtworksPage() {
     load();
     return () => { canceled = true; };
   }, [user]);
+
+  const totalPages = Math.ceil(items.length / limit);
+  const startIndex = (page - 1) * limit;
+  const paginatedItems = items.slice(startIndex, startIndex + limit);
+
+  useEffect(() => {
+    // Reset to first page if current page becomes empty after deletion
+    if (page > 1 && paginatedItems.length === 0 && items.length > 0) {
+      setPage(page - 1);
+    }
+  }, [items.length, paginatedItems.length, page]);
 
   if (loading)
     return <div className="min-h-screen flex items-center justify-center text-sm text-gray-500">Loading...</div>;
@@ -186,17 +199,12 @@ export default function MyArtworksPage() {
         </AlertDialog>
 
         <div
-          className="mx-auto px-6 py-10"
-          style={{
-            maxWidth: 1100,
-            display: "grid",
-            gridTemplateColumns: "270px 1fr",
-            gap: 28,
-          }}
+          className="mx-auto px-6 py-10 flex flex-col md:flex-row gap-10"
+          style={{ maxWidth: 1100 }}
         >
           {/* ── Sidebar ── */}
           <aside
-            className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-[24px] p-6 h-fit"
+            className="w-full md:w-[270px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-[24px] p-6 h-fit"
           >
             {/* Profile row */}
             <div className="flex items-center gap-3 mb-6 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
@@ -249,7 +257,7 @@ export default function MyArtworksPage() {
           </aside>
 
           {/* ── Main content ── */}
-          <div className="flex flex-col">
+          <div className="flex-1 flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-2xl font-bold text-[#1a1a1a] tracking-tight">
@@ -303,7 +311,7 @@ export default function MyArtworksPage() {
 
             {/* Artwork grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {items.map((it) => {
+              {paginatedItems.map((it) => {
                 const credits = (user as any)?.credits ?? 0;
                 const isUnlocked = !!it.unlocked;
                 const hasCredits = credits > 0;
@@ -389,6 +397,45 @@ export default function MyArtworksPage() {
                 );
               })}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl border-gray-200"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1 mx-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`size-8 rounded-lg text-xs font-bold transition-all ${
+                        page === p
+                          ? "bg-[#C5B4A3] text-white"
+                          : "text-gray-400 hover:bg-gray-100"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl border-gray-200"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </main>

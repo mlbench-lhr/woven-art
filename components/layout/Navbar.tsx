@@ -23,10 +23,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import { Menu, X } from "lucide-react";
+
 export default function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
   const router = useRouter();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
@@ -34,8 +37,16 @@ export default function Navbar() {
     setShowLogoutConfirm(false);
   };
 
+  const navLinks = [
+    { label: "Create Artwork", href: "/" },
+    { label: "Shop Woven-Art kit", href: "https://wovenart.store/products/woven-art?variant=53231967076616", target: "_blank" },
+    { label: "Shop Credits", href: "https://wovenart.store/products/new-codes", target: "_blank" },
+    { label: "FAQ", href: "/faq" },
+    { label: "Contact", href: "/contact" },
+  ];
+
   return (
-    <header className="w-full">
+    <header className="w-full bg-white">
       <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -53,17 +64,33 @@ export default function Navbar() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="max-w-[1200px] mx-auto px-6 py-6 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
+      <div className="max-w-[1200px] mx-auto px-6 py-6 flex items-center justify-between relative z-50">
+        {/* Mobile Menu Toggle (Left Side) */}
+        <button 
+          className="md:hidden p-2 text-gray-600 hover:text-black"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        <Link href="/" className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
           <Image src="/logo.png" alt="Woven Art" width={110} height={24} />
         </Link>
+
+        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-10 navbar-text">
-          <Link href="/">Create Artwork</Link>
-          <Link target="_blank" href="https://wovenart.store/products/woven-art?variant=53231967076616">Shop Woven-Art kit</Link>
-          <Link target="_blank" href="https://wovenart.store/products/new-codes">Shop Credits</Link>
-          <Link href="/faq">FAQ</Link>
-          <Link href="#">Contact</Link>
+          {navLinks.map((link) => (
+            <Link 
+              key={link.label} 
+              href={link.href} 
+              target={link.target}
+              className="hover:text-[#C5B4A3] transition-colors"
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
+
         <div className="flex items-center gap-3">
           {user ? (
             <DropdownMenu>
@@ -82,7 +109,7 @@ export default function Navbar() {
                 <DropdownMenuItem onClick={() => router.push("/dashboard/artworks")}>
                   My Artworks
                 </DropdownMenuItem>
-                <DropdownMenuItem variant="destructive" onClick={() => setShowLogoutConfirm(true)}>
+                <DropdownMenuItem onClick={() => setShowLogoutConfirm(true)}>
                   Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -100,6 +127,61 @@ export default function Navbar() {
               </Link>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Mobile Navigation Overlay (Slide from Left) */}
+      <div 
+        className={`md:hidden fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${
+          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      >
+        <div 
+          className={`absolute top-0 left-0 bottom-0 w-[280px] bg-white transition-transform duration-300 ease-in-out ${
+            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex flex-col p-6 gap-6">
+            <div className="flex items-center justify-between mb-4">
+              <Image src="/logo.png" alt="Woven Art" width={100} height={22} />
+              <button onClick={() => setIsMobileMenuOpen(false)}>
+                <X size={24} className="text-gray-600" />
+              </button>
+            </div>
+            <nav className="flex flex-col gap-4">
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.label} 
+                  href={link.href} 
+                  target={link.target}
+                  className="text-lg font-medium text-gray-800 py-2 border-b border-gray-50"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              {!user && (
+                <div className="flex flex-col gap-3 mt-4">
+                  <Link
+                    href="/auth/signup"
+                    className="w-full h-11 flex items-center justify-center rounded-lg font-medium text-[#171d1a] border border-gray-200"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Sign Up
+                  </Link>
+                  <Link
+                    href="/auth/login"
+                    className="w-full h-11 flex items-center justify-center rounded-xl bg-[#C5B4A3] text-white font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Log In
+                  </Link>
+                </div>
+              )}
+            </nav>
+          </div>
         </div>
       </div>
     </header>

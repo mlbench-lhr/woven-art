@@ -48,25 +48,30 @@ export default function HomePage() {
       <Navbar />
       <main className="flex-1">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-6 lg:py-12 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-          <div className="flex flex-col justify-center">
-            <h1 className="text-4xl font-semibold text-[#171d1a]">
+          <div className="flex flex-col justify-center text-center lg:text-left">
+            <h1 className="text-4xl md:text-5xl font-semibold text-[#171d1a] leading-tight">
               Transform Photos into
-              <Image
-                src="/SVG.png"
-                alt="SVG"
-                width={0}
-                height={0}
-                sizes="100vw"
-                className="w-auto h-auto object-cover"
-              />
+              <div className="inline-block mx-2 align-middle">
+                <Image
+                  src="/SVG.png"
+                  alt="SVG"
+                  width={100}
+                  height={20}
+                  className="w-auto h-auto"
+                />
+              </div>
+              <br />
               String Art
             </h1>
-            <p className="mt-6 plan-text-style-3 text-[#51606e]">
-              Start stringing and bring your art to life
+            <p className="mt-6 text-lg text-[#51606e]">
+              Create stunning string art designs in a few clicks
             </p>
-            <div className="mt-8">
-              <Button className="rounded-full" onClick={() => router.push("/create")}>
-                <span className="ml-2">Start Creating</span><ArrowRight className="ml-1 h-4 w-4" />
+            <div className="mt-8 flex justify-center lg:justify-start">
+              <Button 
+                className="rounded-full px-12 py-7 h-auto text-lg opp-button-4 !rounded-full" 
+                onClick={() => router.push("/create")}
+              >
+                Start Creating <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
           </div>
@@ -74,10 +79,9 @@ export default function HomePage() {
           <div className="relative flex items-center justify-center select-none">
             <div 
               ref={containerRef}
-              className="relative w-[360px] h-[360px] md:w-[480px] md:h-[480px] rounded-full overflow-hidden shadow-2xl border-4 border-white"
-              style={{ cursor: isDragging ? "grabbing" as const : "grab" as const }}
-              onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onTouchStart={(e) => { e.preventDefault(); setIsDragging(true); }}
+              className="relative w-[300px] h-[300px] sm:w-[360px] sm:h-[360px] md:w-[480px] md:h-[480px] rounded-full overflow-hidden shadow-2xl border-4 border-white cursor-grab active:cursor-grabbing"
+              onMouseDown={() => setIsDragging(true)}
+              onTouchStart={() => setIsDragging(true)}
             >
               {/* Original Image (Left Side) */}
               <div className="absolute inset-0">
@@ -100,13 +104,8 @@ export default function HomePage() {
                   alt="String Art"
                   fill
                   priority
-                  className="object-cover grayscale contrast-125"
-                  style={{ 
-                    filter: "grayscale(100%) contrast(150%) brightness(90%)",
-                  }}
+                  className="object-cover"
                 />
-                {/* Simulated string art effect - overlaying a fine grid or pattern could go here */}
-                <div className="absolute inset-0 bg-black/5 pointer-events-none" />
               </div>
 
               {/* Slider Handle Line */}
@@ -117,17 +116,15 @@ export default function HomePage() {
 
               {/* Hand Slider Handle */}
               <div 
-                className="absolute z-30 transition-transform duration-75 pointer-events-auto"
+                className="absolute z-30 pointer-events-none transition-transform duration-75"
                 style={{ 
                   left: `${sliderPos}%`,
                   top: "50%",
                   transform: `translate(-50%, -50%) ${isDragging ? "scale(0.9)" : "scale(1)"}`,
                 }}
-                onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onTouchStart={(e) => { e.preventDefault(); setIsDragging(true); }}
               >
-                <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-xl border-2 border-gray-100 flex items-center justify-center">
-                  <div className="relative w-6 h-6 md:w-7 md:h-7">
+                <div className="relative w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-xl border-2 border-white flex items-center justify-center">
+                  <div className="relative w-6 h-6 md:w-7 h-7">
                     <Image
                       src="/hand.png"
                       alt="Drag handle"

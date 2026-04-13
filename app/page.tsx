@@ -81,7 +81,7 @@ export default function HomePage() {
         <div className="relative flex items-center justify-center select-none">
           <div
             ref={containerRef}
-            className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] md:w-[380px] md:h-[380px] rounded-2xl overflow-hidden shadow-2xl border-4 border-white cursor-grab active:cursor-grabbing"
+            className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] md:w-[380px] md:h-[380px] overflow-hidden shadow-2xl border-4 border-white cursor-grab active:cursor-grabbing"
             onMouseDown={() => setIsDragging(true)}
             onTouchStart={() => setIsDragging(true)}
           >

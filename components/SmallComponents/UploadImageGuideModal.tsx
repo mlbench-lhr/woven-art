@@ -50,7 +50,7 @@ export default function UploadImageGuideModal({ triggerComponent, autoOpen }: Pr
             <div className="flex items-center justify-between gap-2 sm:gap-6">
               <div className="relative w-full aspect-square max-w-[180px]">
                 <Image
-                  src="/upload_image_modal/good_before.png"
+                  src="/upload_image_modal/good_before.jpg"
                   alt="Good example before"
                   fill
                   className="rounded-lg object-cover"
@@ -59,7 +59,7 @@ export default function UploadImageGuideModal({ triggerComponent, autoOpen }: Pr
               <ArrowRight className="text-green-600 shrink-0" />
               <div className="relative w-full aspect-square max-w-[180px]">
                 <Image
-                  src="/upload_image_modal/good_after.png"
+                  src="/upload_image_modal/good_after.jpg"
                   alt="Good example after"
                   fill
                   className="rounded-full object-cover"
@@ -76,7 +76,7 @@ export default function UploadImageGuideModal({ triggerComponent, autoOpen }: Pr
             <div className="flex items-center justify-between gap-2 sm:gap-6">
               <div className="relative w-full aspect-square max-w-[180px]">
                 <Image
-                  src="/upload_image_modal/wrong_before.png"
+                  src="/upload_image_modal/wrong_before.jpg"
                   alt="Bad example before"
                   fill
                   className="rounded-lg object-cover"
@@ -85,7 +85,7 @@ export default function UploadImageGuideModal({ triggerComponent, autoOpen }: Pr
               <ArrowRight className="text-red-500 shrink-0" />
               <div className="relative w-full aspect-square max-w-[180px]">
                 <Image
-                  src="/upload_image_modal/wrong_after.png"
+                  src="/upload_image_modal/wrong_after.jpg"
                   alt="Bad example after"
                   fill
                   className="rounded-full object-cover"

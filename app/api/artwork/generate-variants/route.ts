@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     const variants: Variant[] = [
       await runVariant(imageData, 2700, 0, 'v1'),
       await runVariant(imageData, 3300, 61, 'v2'),
-      await runVariant(imageData, 3500, 137, 'v3')
+      await runVariant(imageData, 3700, 137, 'v3')
     ];
 
     return NextResponse.json({ variants });

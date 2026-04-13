@@ -38,7 +38,7 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { label: "Create Artwork", href: "/" },
+    { label: "Create Artwork", href: "/create" },
     { label: "Shop Woven-Art kit", href: "https://wovenart.store/products/woven-art?variant=53231967076616", target: "_blank" },
     { label: "Shop Credits", href: "https://wovenart.store/products/new-codes", target: "_blank" },
     { label: "FAQ", href: "/faq" },

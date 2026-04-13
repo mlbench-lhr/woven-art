@@ -26,9 +26,9 @@ export default function ProgressiveStringPreview({
 
   const pins = useMemo(() => {
     const pts: { x: number; y: number }[] = [];
-    const radius = size / 2;
-    const cx = radius;
-    const cy = radius;
+    const radius = size / 2 - 2;
+    const cx = size / 2;
+    const cy = size / 2;
     for (let i = 0; i < totalPins; i++) {
       const angle = (2 * Math.PI * i) / totalPins;
       pts.push({ x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) });
@@ -73,6 +73,6 @@ export default function ProgressiveStringPreview({
     drawnToRef.current = Math.max(drawnToRef.current, target);
   }, [pins, progressLen, sequence, size, strokeColor, strokeWidth]);
 
-  return <canvas ref={canvasRef} width={size} height={size} className="rounded-full" />;
+  return <canvas ref={canvasRef} width={size} height={size} className="block rounded-full w-full h-full" />;
 }
 

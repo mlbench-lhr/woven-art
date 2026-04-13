@@ -71,18 +71,17 @@ export default function HomePage() {
 
         {/* CTA Button */}
         <Button
-          className="rounded-full px-10 py-6 h-auto text-base font-medium bg-[#b5a49a] hover:bg-[#a5948a] text-white border-none shadow-sm mb-10"
+          className="px-14 py-2 h-auto text-base font-medium bg-[#b5a49a] hover:bg-[#a5948a] text-white border-none shadow-sm mb-10"
           onClick={() => router.push("/create")}
         >
-          Start creating <ArrowRight className="ml-2 h-2 w-4" />
+          Start creating <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
 
         {/* Before/After Slider — square */}
         <div className="relative flex items-center justify-center select-none">
           <div
             ref={containerRef}
-            className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white cursor-grab active:cursor-grabbing"
-            style={{ width: 380, height: 380 }}
+            className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] md:w-[380px] md:h-[380px] rounded-2xl overflow-hidden shadow-2xl border-4 border-white cursor-grab active:cursor-grabbing"
             onMouseDown={() => setIsDragging(true)}
             onTouchStart={() => setIsDragging(true)}
           >

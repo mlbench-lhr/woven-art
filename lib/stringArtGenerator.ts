@@ -1,3 +1,5 @@
+import { ImageData } from "canvas"
+
 type Pin = {
   x: number
   y: number
@@ -18,166 +20,211 @@ export function generateStringArt({
 }: GenerateStringArtParams): number[] {
   const size = imageData.width
   const data = imageData.data
+  const N = size * size
 
-  // --- 1. LIGHTNESS
-  const pixels = new Float32Array(size * size)
-  const base = new Uint8Array(size * size)
-  for (let i = 0; i < size * size; i++) {
-    const r = data[i * 4]
-    const g = data[i * 4 + 1]
-    const b = data[i * 4 + 2]
-    base[i] = Math.round(0.299 * r + 0.587 * g + 0.114 * b)
-  }
-  const blurH = new Float32Array(size * size)
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const x0 = x > 0 ? x - 1 : 0
-      const x1 = x
-      const x2 = x + 1 < size ? x + 1 : size - 1
-      const idx = y * size
-      blurH[idx + x] = (base[idx + x0] + base[idx + x1] + base[idx + x2]) / 3
-    }
-  }
-  const blurred = new Uint8Array(size * size)
-  for (let y = 0; y < size; y++) {
-    const y0 = y > 0 ? y - 1 : 0
-    const y1 = y
-    const y2 = y + 1 < size ? y + 1 : size - 1
-    for (let x = 0; x < size; x++) {
-      const v = (blurH[y0 * size + x] + blurH[y1 * size + x] + blurH[y2 * size + x]) / 3
-      blurred[y * size + x] = Math.round(v)
-    }
-  }
-  const hist = new Uint32Array(256)
-  for (let i = 0; i < blurred.length; i++) hist[blurred[i]]++
-  const total = size * size
-  const lowCount = Math.floor(total * 0.02)
-  const highCount = Math.floor(total * 0.98)
-  let acc = 0
-  let pLow = 0
-  for (let i = 0; i < 256; i++) {
-    acc += hist[i]
-    if (acc >= lowCount) { pLow = i; break }
-  }
-  acc = 0
-  let pHigh = 255
-  for (let i = 0; i < 256; i++) {
-    acc += hist[i]
-    if (acc >= highCount) { pHigh = i; break }
-  }
-  if (pHigh <= pLow) { pLow = 0; pHigh = 255 }
-  const range = pHigh - pLow
-  const gamma = 0.9
-  for (let i = 0; i < pixels.length; i++) {
-    let v = (blurred[i] - pLow) / range
-    if (v < 0) v = 0
-    else if (v > 1) v = 1
-    v = Math.pow(v, gamma)
-    pixels[i] = Math.round(v * 255)
+  // --- 1. GRAYSCALE (Rec. 709 luminance)
+  const gray = new Float32Array(N)
+  for (let i = 0; i < N; i++) {
+    gray[i] = 0.2126 * data[i * 4] + 0.7152 * data[i * 4 + 1] + 0.0722 * data[i * 4 + 2]
   }
 
-  const working = new Float32Array(pixels)
+  // --- 2. Light Gaussian blur for noise reduction (σ=0.8)
+  const smoothed = gaussianBlur(gray, size, 0.8)
 
-  // --- 2. PINS
-  const pins: Pin[] = []
+  // --- 3. Unsharp mask for edge enhancement
+  const coarseBlur = gaussianBlur(gray, size, 3.0)
+  const enhanced = new Float32Array(N)
+  for (let i = 0; i < N; i++) {
+    enhanced[i] = Math.max(0, Math.min(255,
+      smoothed[i] + 0.6 * (smoothed[i] - coarseBlur[i])
+    ))
+  }
+
+  // --- 4. CIRCLE GEOMETRY
   const center = size / 2
   const radius = size / 2 - 1
+  const rSq = radius * radius
 
+  // --- 5. Circular-masked contrast stretch (0.5%–99.5%)
+  const cvals: number[] = []
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dx = x - center, dy = y - center
+      if (dx * dx + dy * dy <= rSq) cvals.push(enhanced[y * size + x])
+    }
+  }
+  cvals.sort((a, b) => a - b)
+  const pLo = cvals[Math.floor(cvals.length * 0.005)]
+  const pHi = cvals[Math.floor(cvals.length * 0.995)]
+  const rng = Math.max(pHi - pLo, 1)
+
+  // --- 6. DARKNESS MAP (255 = black = needs lines, 0 = white = no lines needed)
+  const GAMMA = 2.0
+  const darkness = new Float32Array(N)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = y * size + x
+      const dx = x - center, dy = y - center
+      if (dx * dx + dy * dy > rSq) { darkness[i] = 0; continue }
+      let v = (enhanced[i] - pLo) / rng
+      v = Math.max(0, Math.min(1, v))
+      v = Math.pow(v, GAMMA)
+      darkness[i] = (1 - v) * 255
+    }
+  }
+
+  // Working copy — ALLOWED to go negative (penalty for over-drawing)
+  const working = new Float32Array(darkness)
+
+  // --- 7. PINS on circle
+  const pins: Pin[] = []
   for (let i = 0; i < totalPins; i++) {
-    const angle = (2 * Math.PI * i) / totalPins
+    const a = (2 * Math.PI * i) / totalPins
     pins.push({
-      x: Math.round(center + radius * Math.cos(angle)),
-      y: Math.round(center + radius * Math.sin(angle))
+      x: Math.round(center + radius * Math.cos(a)),
+      y: Math.round(center + radius * Math.sin(a))
     })
   }
 
-  // --- 3. LINE RASTER
-  function linePixels(p1: Pin, p2: Pin): number[] {
+  // --- 8. PRECOMPUTE BRESENHAM LINES (circle-filtered)
+  function bresenham(p1: Pin, p2: Pin): Int32Array {
     const pts: number[] = []
     let x0 = p1.x, y0 = p1.y
-    let x1 = p2.x, y1 = p2.y
-
-    const dx = Math.abs(x1 - x0)
-    const dy = Math.abs(y1 - y0)
-    const sx = x0 < x1 ? 1 : -1
-    const sy = y0 < y1 ? 1 : -1
+    const x1 = p2.x, y1 = p2.y
+    const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0)
+    const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1
     let err = dx - dy
-
     while (true) {
-      pts.push(y0 * size + x0)
+      if (x0 >= 0 && x0 < size && y0 >= 0 && y0 < size) {
+        const ddx = x0 - center, ddy = y0 - center
+        if (ddx * ddx + ddy * ddy <= rSq) pts.push(y0 * size + x0)
+      }
       if (x0 === x1 && y0 === y1) break
       const e2 = err * 2
       if (e2 > -dy) { err -= dy; x0 += sx }
       if (e2 < dx) { err += dx; y0 += sy }
     }
-
-    return pts
+    return new Int32Array(pts)
   }
 
-  const cache = new Map<string, number[]>()
+  const pairCount = (totalPins * (totalPins - 1)) / 2
+  const lineCache: Int32Array[] = new Array(pairCount)
 
-  function getLine(i: number, j: number): number[] {
-    const key = i < j ? `${i}-${j}` : `${j}-${i}`
-    if (!cache.has(key)) {
-      cache.set(key, linePixels(pins[i], pins[j]))
+  function pid(a: number, b: number): number {
+    const lo = a < b ? a : b, hi = a < b ? b : a
+    return (lo * (2 * totalPins - lo - 1)) / 2 + (hi - lo - 1)
+  }
+
+  for (let i = 0; i < totalPins; i++) {
+    for (let j = i + 1; j < totalPins; j++) {
+      lineCache[pid(i, j)] = bresenham(pins[i], pins[j])
     }
-    return cache.get(key)!
   }
 
-  // --- 4. GENERATION
+  // --- 9. AUTO-CALIBRATE LINE WEIGHT
+  let totalDark = 0
+  for (let i = 0; i < N; i++) totalDark += darkness[i]
+
+  let avgLen = 0
+  const sampleN = Math.min(500, pairCount)
+  for (let s = 0; s < sampleN; s++) {
+    avgLen += lineCache[Math.floor(s * pairCount / sampleN)].length
+  }
+  avgLen /= sampleN
+
+  // weight * totalLines * avgLen ≈ totalDark
+  let lineWeight = totalDark / (totalLines * avgLen)
+  lineWeight = Math.max(10, Math.min(80, lineWeight))
+
+  // --- 10. GREEDY SELECTION (penalty scoring — negative working repels lines)
   const sequence: number[] = []
   let current = seed % totalPins
-
-  const MIN_DIST = 15
-  const MAX_BRIGHTNESS = 255
+  const MIN_DIST = 20
+  const recent: number[] = []
+  const RECENT_WIN = 3
 
   for (let step = 0; step < totalLines; step++) {
     sequence.push(current)
 
     let bestPin = -1
     let bestScore = -Infinity
-    let bestLine: number[] | null = null
 
-    for (let i = 0; i < totalPins; i++) {
-      if (i === current) continue
+    for (let c = 0; c < totalPins; c++) {
+      if (c === current) continue
+      const d = Math.min(Math.abs(c - current), totalPins - Math.abs(c - current))
+      if (d < MIN_DIST) continue
+      if (recent.indexOf(c) !== -1) continue
 
-      const dist = Math.abs(i - current)
-      if (dist < MIN_DIST || dist > totalPins - MIN_DIST) continue
+      const line = lineCache[pid(current, c)]
+      const len = line.length
+      if (len === 0) continue
 
-      const line = getLine(current, i)
-
+      // Average remaining darkness — negative values penalize over-drawn areas
       let score = 0
-      for (const idx of line) {
-        score += (MAX_BRIGHTNESS - working[idx])
-      }
-
-      score /= line.length
+      for (let p = 0; p < len; p++) score += working[line[p]]
+      score /= len
 
       if (score > bestScore) {
         bestScore = score
-        bestPin = i
-        bestLine = line
+        bestPin = c
       }
     }
 
-    if (bestPin === -1 || !bestLine) {
-      bestPin = (current + totalPins / 2) % totalPins
-      bestLine = getLine(current, bestPin)
+    if (bestPin === -1) {
+      bestPin = (current + Math.floor(totalPins / 2)) % totalPins
     }
 
-    const weight = 10 + (step / totalLines) * 15
-
-    for (const idx of bestLine) {
-      working[idx] = Math.min(
-        MAX_BRIGHTNESS,
-        working[idx] + weight
-      )
+    // Subtract along chosen line (NO clamping — negative = over-exposed penalty)
+    const chosen = lineCache[pid(current, bestPin)]
+    for (let p = 0; p < chosen.length; p++) {
+      working[chosen[p]] -= lineWeight
     }
 
+    recent.push(current)
+    if (recent.length > RECENT_WIN) recent.shift()
     current = bestPin
   }
 
   sequence.push(current)
-
   return sequence
+}
+
+// --- SEPARABLE GAUSSIAN BLUR ---
+function gaussianBlur(input: Float32Array, size: number, sigma: number): Float32Array {
+  const ks = Math.ceil(sigma * 3) * 2 + 1
+  const half = Math.floor(ks / 2)
+  const kernel = new Float32Array(ks)
+  let sum = 0
+  for (let i = 0; i < ks; i++) {
+    const x = i - half
+    kernel[i] = Math.exp(-(x * x) / (2 * sigma * sigma))
+    sum += kernel[i]
+  }
+  for (let i = 0; i < ks; i++) kernel[i] /= sum
+
+  const temp = new Float32Array(size * size)
+  for (let y = 0; y < size; y++) {
+    const row = y * size
+    for (let x = 0; x < size; x++) {
+      let val = 0
+      for (let k = 0; k < ks; k++) {
+        const xx = Math.min(size - 1, Math.max(0, x + k - half))
+        val += input[row + xx] * kernel[k]
+      }
+      temp[row + x] = val
+    }
+  }
+
+  const output = new Float32Array(size * size)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      let val = 0
+      for (let k = 0; k < ks; k++) {
+        const yy = Math.min(size - 1, Math.max(0, y + k - half))
+        val += temp[yy * size + x] * kernel[k]
+      }
+      output[y * size + x] = val
+    }
+  }
+  return output
 }

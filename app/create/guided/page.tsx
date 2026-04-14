@@ -102,6 +102,7 @@ export default function GuidedCreatePage() {
   const [loadingArt, setLoadingArt] = useState<boolean>(false);
   const [artLoaded, setArtLoaded] = useState<boolean>(false);
   const [showCongratulationsModal, setShowCongratulationsModal] = useState(false);
+  const [showGuidedModal, setShowGuidedModal] = useState(false);
 
   useEffect(() => {
     if (variants.length === 0) {
@@ -124,10 +125,15 @@ export default function GuidedCreatePage() {
         const res = await fetch(`/api/artwork/${artId}`, { credentials: "include" });
         if (!res.ok) return;
         const j = await res.json();
+        console.log(j);
         setServerSequence(j.item?.finalSequence || null);
         setServerTotalLines(j.item?.totalLines || null);
         setServerUnlocked(!!j.item?.unlocked);
         setServerProgress(j.progress?.currentStep || 1);
+        // ✅ KEY LOGIC
+        if (j.progress?.currentStep <= 1) {
+          setShowGuidedModal(true);
+        }
       } finally {
         setLoadingArt(false);
         setArtLoaded(true);
@@ -377,7 +383,10 @@ export default function GuidedCreatePage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <GuidedInfoModal autoOpen />
+      <GuidedInfoModal
+        open={showGuidedModal}
+        onClose={() => setShowGuidedModal(false)}
+      />
       <CongratulationsModal
         open={showCongratulationsModal}
         onClose={() => setShowCongratulationsModal(false)}
@@ -387,6 +396,7 @@ export default function GuidedCreatePage() {
         <div className="max-w-[1000px] mx-auto px-4 py-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-6">
             <Button
+              className="hidden md:block"
               variant="outline"
               onClick={() =>
                 artId
@@ -489,31 +499,33 @@ export default function GuidedCreatePage() {
             {activeSequence.length > 0 && (
               <div className="flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-2 sm:gap-y-1">
                 <div className="flex items-center gap-1">
-                  <span className="underline underline-offset-4 decoration-2">Current Line:</span>
                   {isEditingLine ? (
-                    <input
-                      ref={lineInputRef}
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      max={maxStep}
-                      value={lineDraft}
-                      onChange={(e) => setLineDraft(e.target.value)}
-                      onBlur={() => {
-                        const n = Number(lineDraft);
-                        if (Number.isFinite(n)) setStep(clampNumber(Math.trunc(n) + 1, 1, maxStep + 1));
-                        setIsEditingLine(false);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") e.currentTarget.blur();
-                        if (e.key === "Escape") {
-                          setLineDraft(String(step - 1));
+                    <>
+                      <span className="underline underline-offset-4 decoration-2">Current Line:</span>
+                      <input
+                        ref={lineInputRef}
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        max={maxStep}
+                        value={lineDraft}
+                        onChange={(e) => setLineDraft(e.target.value)}
+                        onBlur={() => {
+                          const n = Number(lineDraft);
+                          if (Number.isFinite(n)) setStep(clampNumber(Math.trunc(n) + 1, 1, maxStep + 1));
                           setIsEditingLine(false);
-                        }
-                      }}
-                      className="w-[72px] text-center font-bold underline decoration-2 underline-offset-4 outline-none bg-transparent"
-                      autoFocus
-                    />
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur();
+                          if (e.key === "Escape") {
+                            setLineDraft(String(step - 1));
+                            setIsEditingLine(false);
+                          }
+                        }}
+                        className="w-[48px] text-center font-bold underline decoration-2 underline-offset-4 outline-none bg-transparent"
+                        autoFocus
+                      />
+                    </>
                   ) : (
                     <button
                       type="button"
@@ -523,7 +535,7 @@ export default function GuidedCreatePage() {
                         setTimeout(() => lineInputRef.current?.select(), 0);
                       }}
                     >
-                      {step}
+                      Current Line:{step}
                     </button>
                   )}
                   <span className="font-medium text-gray-500">/{maxStep}</span>
@@ -693,7 +705,21 @@ function GuidedCanvas({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, size, size);
+    // Handle high-DPI displays for crisp rendering
+    const dpr = window.devicePixelRatio || 1;
+    const displaySize = size;
+    const actualSize = displaySize * dpr;
+    
+    // Set canvas resolution for sharp rendering
+    canvas.width = actualSize;
+    canvas.height = actualSize;
+    canvas.style.width = `${displaySize}px`;
+    canvas.style.height = `${displaySize}px`;
+    
+    // Scale context for device pixel ratio
+    ctx.scale(dpr, dpr);
+    
+    ctx.clearRect(0, 0, displaySize, displaySize);
     const cx = size / 2;
     const cy = size / 2;
     const ringWidth = 14;
@@ -733,9 +759,12 @@ function GuidedCanvas({
     const desiredDots = totalPins; // or 120 / 240 etc
     const dashLength = circumference / (desiredDots * 2);
 
+    // Scale line width for better visibility on mobile
+    const scaledLineWidth = Math.max(1, Math.min(2, 1.5 * (size / 420)));
+    
     ctx.setLineDash([dashLength, dashLength]);
     ctx.strokeStyle = "rgb(8, 9, 10)";
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = scaledLineWidth;
     ctx.beginPath();
     ctx.arc(cx, cy, dottedRadius, 0, 2 * Math.PI);
     ctx.stroke();
@@ -802,24 +831,30 @@ function GuidedCanvas({
       const ay = cy + labelRadius * Math.sin(aAngle);
       const bx = cx + labelRadius * Math.cos(bAngle);
       const by = cy + labelRadius * Math.sin(bAngle);
-      drawPinLabel(ctx, ax, ay, aMeta.pin ? String(aMeta.pin) : String(aIdx), aMeta.hex);
-      drawPinLabel(ctx, bx, by, bMeta.pin ? String(bMeta.pin) : String(bIdx), bMeta.hex);
+      drawPinLabel(ctx, ax, ay, aMeta.pin ? String(aMeta.pin) : String(aIdx), aMeta.hex, size);
+      drawPinLabel(ctx, bx, by, bMeta.pin ? String(bMeta.pin) : String(bIdx), bMeta.hex, size);
     }
   }, [sequence, totalPins, size, renderStep]);
 
-  return <canvas ref={canvasRef} width={size} height={size} className="rounded-full" />;
+  return <canvas ref={canvasRef} className="rounded-full" />;
 }
 
-function drawPinLabel(ctx: CanvasRenderingContext2D, x: number, y: number, text: string, fill: string) {
+function drawPinLabel(ctx: CanvasRenderingContext2D, x: number, y: number, text: string, fill: string, canvasSize: number) {
+  // Scale bubble and font size based on canvas size for better mobile display
+  const scaleFactor = Math.max(0.7, Math.min(1.2, canvasSize / 420));
+  const bubbleRadius = Math.max(16, 20 * scaleFactor);
+  const fontSize = Math.max(12, Math.min(15, 15 * scaleFactor));
+  
   ctx.fillStyle = fill;
   ctx.strokeStyle = "#000";
-  ctx.lineWidth = 2;
+  ctx.lineWidth = Math.max(1.5, 2 * scaleFactor);
   ctx.beginPath();
-  ctx.arc(x, y, 20, 0, 2 * Math.PI);
+  ctx.arc(x, y, bubbleRadius, 0, 2 * Math.PI);
   ctx.fill();
   ctx.stroke();
+  
   ctx.fillStyle = "#111827";
-  ctx.font = "15px sans-serif";
+  ctx.font = `${fontSize}px sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(text, x, y);

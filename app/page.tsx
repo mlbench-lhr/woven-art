@@ -50,7 +50,8 @@ export default function HomePage() {
 
         {/* Title */}
         <h1 className="text-2xl md:text-4xl font-serif font-normal text-[#1a1a1a] leading-tight max-w-2xl">
-          Turn your memories into Woven-Art.
+          Turn your memories into{" "}
+          <span className="whitespace-nowrap">Woven-Art</span>.
         </h1>
 
         {/* Underline image — natural size using width/height that match the PNG's own aspect ratio */}

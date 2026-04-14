@@ -20,6 +20,26 @@ export async function POST(req: NextRequest) {
     const user = await User.findById(payload.userId);
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
+    const instructionCode = await InstructionCode.findOne({ code });
+
+    if (!instructionCode) {
+      return Response.json({ error: "Invalid Code" }, { status: 404 });
+    }
+
+    // 🔴 Core validation
+    const dbEmail = instructionCode.email?.toLowerCase();
+
+    if (dbEmail !== user.email) {
+      return Response.json(
+        { error: "This code does not belong to your account" },
+        { status: 403 }
+      );
+    }
+
+    if (instructionCode.redeemedAt) {
+      return Response.json({ error: "Code already used" }, { status: 400 });
+    }
+
     const updatedCode = await InstructionCode.findOneAndUpdate(
       { code, redeemedBy: null },
       { $set: { redeemedBy: user._id.toString(), redeemedAt: new Date() } },

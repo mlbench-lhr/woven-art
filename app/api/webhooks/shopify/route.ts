@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
   const orderId = payload?.id ? String(payload.id) : null;
   const lineItems: any[] = Array.isArray(payload?.line_items) ? payload.line_items : [];
-  const titleMatch = (process.env.SHOPIFY_CODE_PRODUCT_TITLE_MATCH || "Instruction Code").toLowerCase();
+  const titleMatch = (process.env.SHOPIFY_CODE_PRODUCT_TITLE_MATCH || "New Codes").toLowerCase();
 
   const qualifying = lineItems.filter((li) => {
     const title = String(li?.title || "").toLowerCase();

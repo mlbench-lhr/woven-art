@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Confetti from "react-confetti";
+import { FaTiktok, FaFacebookF, FaInstagram } from "react-icons/fa";
 
 type Props = {
   open: boolean;
@@ -43,9 +44,41 @@ export default function CongratulationsModal({ open, onClose }: Props) {
           <div className="mt-6 text-sm sm:text-[15px] leading-relaxed text-[#222222] max-w-[420px]">
             Your artwork is complete!
             <br />
-            Share your creation on Instagram and tag{" "}
-            <span className="font-bold">@wovenart.store</span> to receive a{" "}
+            Share your creation on your <span className="font-semibold italic">Instagram, tiktok or facebook</span> and tag us to receive a{" "}
             <span className="font-bold">$5,- cashback.</span>
+          </div>
+          <div className="mt-6 flex gap-5 justify-center items-center">
+
+            {/* TikTok */}
+            <a
+              href="https://www.tiktok.com/@wovenart.studio"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-black hover:scale-110 transition"
+            >
+              <FaTiktok size={20} className="text-white" />
+            </a>
+
+            {/* Facebook */}
+            <a
+              href="https://www.facebook.com/share/1BtaJKMz4T/?mibextid=wwXIfr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1877F2] hover:scale-110 transition"
+            >
+              <FaFacebookF size={20} className="text-white" />
+            </a>
+
+            {/* Instagram */}
+            <a
+              href="https://www.instagram.com/wovenart.store"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 hover:scale-110 transition"
+            >
+              <FaInstagram size={20} className="text-white" />
+            </a>
+
           </div>
         </div>
 

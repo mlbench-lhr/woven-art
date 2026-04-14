@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 const fromName = process.env.MAIL_FROM_NAME;
-const fromEmail ="no-reply@example.com";
+const fromEmail = process.env.SMTP_USER;
 
 const getTransporter = () => {
   const host = process.env.SMTP_HOST;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateStringArt } from '@/lib/stringArtGenerator';
-import { createCanvas, loadImage } from "canvas";
+import { createCanvas, loadImage, ImageData } from "canvas";
 
 type RequestBody = {
   image: string; // base64 string
@@ -35,9 +35,9 @@ export async function POST(req: NextRequest) {
     const imageData = await base64ToImageData(image);
 
     const variants: Variant[] = [
-      await runVariant(imageData, 2700, 0, 'v1'),
-      await runVariant(imageData, 3300, 61, 'v2'),
-      await runVariant(imageData, 3700, 137, 'v3')
+      await runVariant(imageData, 3500, 0, 'v1'),
+      await runVariant(imageData, 4200, 61, 'v2'),
+      await runVariant(imageData, 5000, 137, 'v3')
     ];
 
     return NextResponse.json({ variants });
@@ -47,12 +47,14 @@ export async function POST(req: NextRequest) {
   }
 }
 
+const PROCESS_SIZE = 500;
+
 async function base64ToImageData(base64: string): Promise<ImageData> {
   const img = await loadImage(base64);
-  const canvas = createCanvas(img.width, img.height);
+  const canvas = createCanvas(PROCESS_SIZE, PROCESS_SIZE);
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(img, 0, 0);
-  return ctx.getImageData(0, 0, img.width, img.height);
+  ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, PROCESS_SIZE, PROCESS_SIZE);
+  return ctx.getImageData(0, 0, PROCESS_SIZE, PROCESS_SIZE);
 }
 
 async function runVariant(

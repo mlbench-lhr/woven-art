@@ -57,7 +57,7 @@ export default function HomePage() {
         {/* Underline image — natural size using width/height that match the PNG's own aspect ratio */}
         <div className="mb-8">
           <Image
-            src="landing page/under-line.png"
+            src="home_page_images/under-line.png"
             alt="underline"
             width={320}
             height={40}
@@ -89,7 +89,7 @@ export default function HomePage() {
             {/* Original Image (Left Side) */}
             <div className="absolute inset-0">
               <Image
-                src="landing page/20.png"
+                src="home_page_images/20.png"
                 alt="Original"
                 fill
                 priority
@@ -103,7 +103,7 @@ export default function HomePage() {
               style={{ clipPath: `inset(0 0 0 ${sliderPos}%)` }}
             >
               <Image
-                src="landing page/21.png"
+                src="home_page_images/21.png"
                 alt="String Art"
                 fill
                 priority

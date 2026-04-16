@@ -8,7 +8,7 @@ import {
   signOut as authSignOut,
 } from "@/lib/auth/auth-helpers";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
-import { setReduxUser } from "@/lib/store/slices/authSlice";
+import { setReduxUser, clearUser } from "@/lib/store/slices/authSlice";
 import { useRouter } from "next/navigation";
 
 interface AuthContextType {
@@ -31,15 +31,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await getCurrentUser();
       if (data?.user) {
         dispatch(setReduxUser(data.user));
-      }
-      if (error || !data) {
+        setUser(data.user);
+      } else if (error) {
+        console.error("Error fetching user:", error);
         setUser(null);
-        return;
+        // Clear any potentially invalid Redux state
+        dispatch(clearUser());
+      } else {
+        // No user data available
+        setUser(null);
+        dispatch(clearUser());
       }
-      setUser(data.user);
     } catch (error) {
       console.error("Error fetching user:", error);
       setUser(null);
+      dispatch(clearUser());
+    }
+  };
+
+  // Add a function to check if user is authenticated without triggering errors
+  const checkAuthStatus = async () => {
+    try {
+      const res = await fetch("/api/auth/me", {
+        method: "GET",
+        credentials: "include",
+      });
+      
+      if (res && res.ok) {
+        return { authenticated: true };
+      } else {
+        return { authenticated: false };
+      }
+    } catch (error) {
+      return { authenticated: false };
     }
   };
 

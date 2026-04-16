@@ -26,16 +26,6 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "Invalid Code" }, { status: 404 });
     }
 
-    // 🔴 Core validation
-    const dbEmail = instructionCode.email?.toLowerCase();
-
-    if (dbEmail !== user.email) {
-      return Response.json(
-        { error: "This code does not belong to your account" },
-        { status: 403 }
-      );
-    }
-
     if (instructionCode.redeemedAt) {
       return Response.json({ error: "Code already used" }, { status: 400 });
     }

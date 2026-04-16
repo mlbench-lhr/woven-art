@@ -16,6 +16,7 @@ export default function CreatePage() {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const { setVariants } = useVariants();
 
   const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
@@ -27,6 +28,29 @@ export default function CreatePage() {
     const reader = new FileReader();
     reader.onload = (e) => setImage(e.target?.result as string);
     reader.readAsDataURL(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleFile(files[0]);
+    }
   };
 
   const getCroppedImg = async (imageSrc: string, pixelCrop: any): Promise<string> => {
@@ -79,7 +103,14 @@ export default function CreatePage() {
             {image ? "Crop Your Photo" : "Upload Your Photo"}
           </h1>
 
-          <div className="mt-10 w-full max-w-[360px] aspect-square relative border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden bg-gray-50">
+          <div 
+            className={`mt-10 w-full max-w-[360px] aspect-square relative border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden transition-colors ${
+              isDragOver ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             {image ? (
               <div className="absolute inset-0">
                 <Cropper
@@ -99,8 +130,16 @@ export default function CreatePage() {
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full h-full flex flex-col items-center justify-center cursor-pointer px-6 text-center"
               >
-                <p className="font-medium text-gray-700">
-                  <span className="font-semibold">Click to upload</span> or drag and drop
+                <div className={`mb-4 transition-transform ${isDragOver ? "scale-110" : ""}`}>
+                  <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-gray-200 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+                </div>
+                <p className={`font-medium ${isDragOver ? "text-blue-600" : "text-gray-700"}`}>
+                  <span className="font-semibold">{isDragOver ? "Drop your image here" : "Click to upload"}</span> 
+                  {!isDragOver && " or drag and drop"}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">PNG, JPG or GIF (min 150×150)</p>
               </div>

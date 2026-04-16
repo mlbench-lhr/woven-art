@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import connectDB from "@/lib/mongodb/connection";
 import { InstructionCode } from "@/lib/mongodb/models/InstructionCode";
-import { sendInstructionCodeKlaviyoEvent } from "@/lib/klaviyo";
 import { sendInstructionCodeEmail } from "@/lib/email/email-service";
 
 function verifyShopifyHmac(rawBody: string, hmacHeader: string | null, secret: string): boolean {
@@ -51,13 +50,22 @@ export async function POST(req: NextRequest) {
 
   const orderId = payload?.id ? String(payload.id) : null;
   const lineItems: any[] = Array.isArray(payload?.line_items) ? payload.line_items : [];
-  const titleMatch = (process.env.SHOPIFY_CODE_PRODUCT_TITLE_MATCH || "New Codes").toLowerCase();
 
-  const qualifying = lineItems.filter((li) => {
+  const isNewCodes = (li: any) => {
     const title = String(li?.title || "").toLowerCase();
     const sku = String(li?.sku || "").toLowerCase();
-    return title.includes(titleMatch) || sku.includes("newcodes") || sku.includes("instruction");
-  });
+    return title.includes("new codes") || sku.includes("newcodes");
+  };
+
+  const isStringArtKit = (li: any) => {
+    const title = String(li?.title || "").toLowerCase();
+    const sku = String(li?.sku || "").toLowerCase();
+    return title.includes("string-art kit") || sku.includes("stringart");
+  };
+
+  const qualifying = lineItems.filter(
+    (li) => isNewCodes(li) || isStringArtKit(li)
+  );
 
   if (qualifying.length === 0) {
     return NextResponse.json({ ok: true, skipped: true });
@@ -106,13 +114,18 @@ export async function POST(req: NextRequest) {
   const uniqueCodes = Array.from(new Set(createdCodes));
   if (uniqueCodes.length > 0) {
     const joined = uniqueCodes.join(", ");
+
     try {
-      await sendInstructionCodeKlaviyoEvent({ email, code: joined, credits: 3, orderId });
-    } catch {
-      try {
-        await sendInstructionCodeEmail(email, joined, 3);
-      } catch {}
+      await sendInstructionCodeEmail(email, joined, 3);
+    } catch (error) {
+      console.error("sendInstructionCodeEmail failed", {
+        email,
+        codes: joined,
+        credits: 3,
+        error: error instanceof Error ? error.message : error,
+      });
     }
+
   }
 
   return NextResponse.json({ ok: true });

@@ -21,6 +21,7 @@ import Image from "next/image";
 export default function VerifyEmailPage() {
   const [otp, setOtp] = useState("");
   const [email, setEmail] = useState("");
+  const [redirect, setRedirect] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -31,10 +32,14 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     const emailParam = searchParams.get("email");
+    const redirectParam = searchParams.get("redirect");
     if (emailParam) {
       setEmail(emailParam);
     } else {
       setError("Email parameter missing");
+    }
+    if (redirectParam) {
+      setRedirect(redirectParam);
     }
   }, [searchParams]);
 
@@ -80,7 +85,8 @@ export default function VerifyEmailPage() {
           showConfirmButton: false,
         });
         setTimeout(() => {
-          router.push("/auth/login");
+          const loginUrl = redirect ? `/auth/login?redirect=${encodeURIComponent(redirect)}` : "/auth/login";
+          router.push(loginUrl);
         }, 1500);
       } else {
         setError(data.error || "Invalid OTP. Please try again.");

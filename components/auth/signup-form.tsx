@@ -68,7 +68,7 @@ export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redir
           setSuccess(true);
         } else {
           await refreshUser();
-          router.push("/");
+          router.push(redirectTo || "/");
         }
       }
     } catch (err) {
@@ -116,11 +116,12 @@ export function SignupForm({ isVendor, redirectTo }: { isVendor?: Boolean; redir
   useEffect(() => {
     if (success) {
       const email = watch("email");
-      router.push(
-        `/auth/verify-email?email=${encodeURIComponent(email || "")}`
-      );
+      const verifyUrl = redirectTo 
+        ? `/auth/verify-email?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirectTo)}`
+        : `/auth/verify-email?email=${encodeURIComponent(email || "")}`;
+      router.push(verifyUrl);
     }
-  }, [success, router, watch]);
+  }, [success, router, watch, redirectTo]);
 
   return (
     <Card className="w-full max-w-md auth-box-shadows min-h-fit max-h-full">

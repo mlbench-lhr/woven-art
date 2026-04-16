@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { sendContactEmail } from "@/lib/email/email-service";
+import { sendContactEmail, sendContactAutoReply } from "@/lib/email/email-service";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -19,6 +19,12 @@ export async function POST(request: NextRequest) {
       validatedData.name,
       validatedData.email,
       validatedData.message
+    );
+
+    // Send auto-reply to user
+    await sendContactAutoReply(
+      validatedData.name,
+      validatedData.email
     );
 
     return NextResponse.json({ message: "Email sent successfully" });

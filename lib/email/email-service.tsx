@@ -1,6 +1,8 @@
 import nodemailer from "nodemailer";
 const fromName = process.env.MAIL_FROM_NAME;
 const fromEmail = process.env.SMTP_USER;
+const redirectUrl = process.env.GOOGLE_REDIRECT_URL;
+
 
 const getTransporter = () => {
   const host = process.env.SMTP_HOST;
@@ -178,7 +180,7 @@ export const sendContactAutoReply = async (name: string, email: string) => {
       </p>
       
       <div style="text-align: center; margin: 25px 0;">
-        <a href="https://wovenart.store/create" 
+        <a href="${redirectUrl}/create" 
            style="display: inline-block; background-color: #C5B4A3; color: white; 
                   padding: 12px 24px; text-decoration: none; border-radius: 25px; 
                   font-weight: 500; font-size: 14px;">

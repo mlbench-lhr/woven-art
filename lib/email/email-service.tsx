@@ -76,7 +76,7 @@ export const sendInstructionCodeEmail = async (email: string, code: string, cred
   const transporter = getTransporter();
   const htmlContent = `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-    <h2 style="color: #333;">Your Instruction Code</h2>
+    <h2 style="color: #333;">Your code to start creating</h2>
     <p>Thanks for your purchase. Use the code below to add ${credits} credits to your account.</p>
     <div style="text-align: center; margin: 30px 0;">
       <div style="background-color: #f8f9fa; border: 2px dashed #C5B4A3;
@@ -85,14 +85,35 @@ export const sendInstructionCodeEmail = async (email: string, code: string, cred
                      letter-spacing: 5px;">${code}</span>
       </div>
     </div>
-    <p style="color: #666; font-size: 14px;">
-      Enter this code in the “Instruction Code” popup inside your dashboard.
-    </p>
+    
+    <div style="margin-top: 40px; padding: 20px; background-color: #f8f9fa; border-radius: 10px;">
+      <h3 style="color: #333; font-size: 18px; margin-bottom: 20px; text-align: center;">How to Get Started</h3>
+      <ol style="color: #666; font-size: 14px; line-height: 1.6; padding-left: 20px;">
+        <li style="margin-bottom: 10px;">Go to <a href="https://app-wovenart.store" style="color: #C5B4A3; text-decoration: none;">app-wovenart.store</a></li>
+        <li style="margin-bottom: 10px;">Generate a string art design from your photo</li>
+        <li style="margin-bottom: 10px;">Create an account during the process</li>
+        <li style="margin-bottom: 10px;">Enter your code to receive your credits</li>
+        <li style="margin-bottom: 10px;">Use your credits to unlock the instructions</li>
+      </ol>
+      
+      <div style="margin-top: 20px; padding: 15px; background-color: white; border-radius: 8px; border-left: 4px solid #C5B4A3;">
+        <p style="color: #333; font-size: 14px; margin: 0;">
+          <strong>Create unlimited designs for free.</strong><br />
+          Each design requires 1 credit to unlock the full instructions.<br />
+          Once unlocked, simply begin creating.
+        </p>
+      </div>
+      
+      <p style="color: #666; font-size: 13px; margin-top: 20px; text-align: center;">
+        If you have any questions or need assistance, feel free to contact us at<br />
+        <a href="mailto:contact@wovenart.store" style="color: #C5B4A3; text-decoration: none;">contact@wovenart.store</a>
+      </p>
+    </div>
   </div>`;
   await transporter.sendMail({
     from: `"${fromName}" <${fromEmail}>`,
     to: email,
-    subject: "Your Woven Art Instruction Code",
+    subject: "Your Woven Art Credits",
     html: htmlContent,
   });
 };

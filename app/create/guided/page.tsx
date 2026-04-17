@@ -376,7 +376,7 @@ export default function GuidedCreatePage() {
       return;
     }
     const newStep = clampNumber(endIdx + 1, 1, Math.max(1, activeSequence.length - 1));
-    setStep(newStep);
+    setStep(newStep-2);
     setLostOpen(false);
     toast.success("Position restored.");
   };

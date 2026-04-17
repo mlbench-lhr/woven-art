@@ -39,13 +39,16 @@ export default function CongratulationsModal({ open, onClose }: Props) {
         className="w-[calc(100vw-32px)] sm:max-w-[560px] rounded-[28px] p-8 sm:p-10 bg-[#f7f6f4] border-0"
       >
         <div className="flex flex-col items-center text-center relative">
-          <DialogTitle className="text-xl font-semibold text-[#111111]">Congratulations!</DialogTitle>
+          <DialogTitle className="text-3xl font-semibold text-[#111111]">Congratulations!</DialogTitle>
 
-          <div className="mt-6 text-sm sm:text-[15px] leading-relaxed text-[#222222] max-w-[420px]">
+          <div className="mt-6 text-sm sm:text-[18px] font-medium leading-relaxed text-[#222222] max-w-[420px]">
             Your artwork is complete!
             <br />
+            Finish by tying a triple knot around the last pin,
+            maintaining tension on the thread.
+            <br />
             Share your creation on your <span className="font-semibold italic">Instagram, tiktok or facebook</span> and tag us to receive a{" "}
-            <span className="font-bold">$5,- cashback.</span>
+            <p className="font-bold text-[22px]">$5,- cashback.</p>
           </div>
           <div className="mt-6 flex gap-5 justify-center items-center">
 

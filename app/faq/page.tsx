@@ -83,9 +83,29 @@ const faqData = [
       "You create the artwork from the back side of the frame. This means the design appears mirrored during the process, but once you hang it, it will look correct.",
   },
   {
-    question: "What if I make a mistake while stringing?",
+    question: "What if thread breaks?",
     answer:
-      "You can carefully remove the string and redo the step. Take your time and follow the instructions closely.",
+      "No problem. Tie both ends to the last pin you used and continue from there. If there isn't enough thread to tie a knot, use the previous pin instead. The knot will not be visible in the final result.",
+  },
+  {
+    question: "Does it matter which side of the pin I guide the thread around?",
+    answer:
+      "No, this does not affect the final result.",
+  },
+  {
+    question: "How can I pause my artwork?",
+    answer:
+      "To pause, gently wind the spool back so the thread stays under tension. This prevents it from slipping off the pins while you take a break.",
+  },
+  {
+    question: "My pin is loose — what should I do?",
+    answer:
+      "If a pin feels loose, gently tap it back into place using a small hammer or the back of a screwdriver. Make sure not to apply too much force.",
+  },
+  {
+    question: "What if I make a mistake?",
+    answer:
+      "No worries. If you're only one step off, you can simply unwind the thread and correct it. If you've already moved several steps ahead, it doesn't matter — a small mistake won't be noticeable in the final result.",
   },
   {
     question: "I didn’t receive my credits, what should I do?",

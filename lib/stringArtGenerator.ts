@@ -12,12 +12,13 @@ type GenerateStringArtParams = {
   seed?: number
 }
 
-export function generateStringArt({
+export async function generateStringArt({
   imageData,
   totalPins = 240,
   totalLines = 3000,
-  seed = 0
-}: GenerateStringArtParams): number[] {
+  seed = 0,
+  onLine
+}: GenerateStringArtParams & { onLine?: (progressLen: number) => void }): Promise<number[]> {
   const size = imageData.width
   const data = imageData.data
   const N = size * size
@@ -137,56 +138,64 @@ export function generateStringArt({
   lineWeight = Math.max(10, Math.min(80, lineWeight))
 
   // --- 10. GREEDY SELECTION (penalty scoring — negative working repels lines)
-  const sequence: number[] = []
-  let current = seed % totalPins
-  const MIN_DIST = 20
-  const recent: number[] = []
-  const RECENT_WIN = 3
+  const sequenceOut: number[] = [];
+  let current = seed % totalPins;
+  const MIN_DIST = 15;
+  const MAX_BRIGHTNESS = 255;
 
+  // Helper function to get cached line
+  function getLine(a: number, b: number): Int32Array {
+    return lineCache[pid(a, b)];
+  }
+
+  let lastReport = 0;
   for (let step = 0; step < totalLines; step++) {
-    sequence.push(current)
+    // Store original current for internal calculations
+    sequenceOut.push(totalPins - 1 - current);
 
-    let bestPin = -1
-    let bestScore = -Infinity
+    let bestPin = -1;
+    let bestScore = -Infinity;
+    let bestLine: Int32Array | null = null;
 
-    for (let c = 0; c < totalPins; c++) {
-      if (c === current) continue
-      const d = Math.min(Math.abs(c - current), totalPins - Math.abs(c - current))
-      if (d < MIN_DIST) continue
-      if (recent.indexOf(c) !== -1) continue
-
-      const line = lineCache[pid(current, c)]
-      const len = line.length
-      if (len === 0) continue
-
-      // Average remaining darkness — negative values penalize over-drawn areas
-      let score = 0
-      for (let p = 0; p < len; p++) score += working[line[p]]
-      score /= len
-
+    for (let i = 0; i < totalPins; i++) {
+      if (i === current) continue;
+      const dist = Math.abs(i - current);
+      if (dist < MIN_DIST || dist > totalPins - MIN_DIST) continue;
+      const line = getLine(current, i);
+      let score = 0;
+      for (const idx of line) score += MAX_BRIGHTNESS - working[idx];
+      score /= line.length;
       if (score > bestScore) {
-        bestScore = score
-        bestPin = c
+        bestScore = score;
+        bestPin = i;
+        bestLine = line;
       }
     }
 
-    if (bestPin === -1) {
-      bestPin = (current + Math.floor(totalPins / 2)) % totalPins
+    if (bestPin === -1 || !bestLine) {
+      bestPin = (current + totalPins / 2) % totalPins;
+      bestLine = getLine(current, bestPin);
     }
 
-    // Subtract along chosen line (NO clamping — negative = over-exposed penalty)
-    const chosen = lineCache[pid(current, bestPin)]
-    for (let p = 0; p < chosen.length; p++) {
-      working[chosen[p]] -= lineWeight
+    const weight = 12 + (step / totalLines) * 20;
+    if (bestLine) {
+      for (const idx of bestLine) {
+        const v = working[idx] + weight;
+        working[idx] = v > MAX_BRIGHTNESS ? MAX_BRIGHTNESS : v;
+      }
     }
 
-    recent.push(current)
-    if (recent.length > RECENT_WIN) recent.shift()
-    current = bestPin
+    // Store the mirrored position for the next iteration
+    current = bestPin;
+    if (step - lastReport >= 1 || step === totalLines - 1) {
+      lastReport = step;
+      if (onLine) onLine(sequenceOut.length - 1);
+      await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+    }
   }
 
-  sequence.push(current)
-  return sequence
+  sequenceOut.push(totalPins - 1 - current);
+  return sequenceOut
 }
 
 // --- SEPARABLE GAUSSIAN BLUR ---

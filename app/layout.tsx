@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "Woven Art",
   description:
     " A platform to discover and book tours, activities, and local experiences in Woven Art, Turkey.",
-  icons: "/logo.png"
+  icons: "/favicon.png"
 };
 
 export const preferredRegion = ["fra1"];

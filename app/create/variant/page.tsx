@@ -174,8 +174,8 @@ export default function SelectVariantPage() {
                     sequence={v.sequence}
                     totalPins={240}
                     size={80}
-                    strokeColor="#888"
-                    strokeWidth={0.05}
+                    strokeColor="#777"
+                    strokeWidth={0.03}
                     progressLen={progress[v.id] ?? 0}
                   />
                 </div>

@@ -52,9 +52,13 @@ export default function GuidedInfoModal({ open, onClose }: Props) {
                 <Image src="/string-knot.png" alt="" width={150} height={150} priority />
               </div>
               <div className="mt-6 text-sm sm:text-[15px] leading-relaxed text-[#222222] max-w-[480px]">
-                Before you start stringing, tie a triple knot around the first pin and cut off the loose end.Keep tension on the string at all times to prevent it from slipping off the pins.<br />
-                If you want to take a break, simply wind the spool back slightly so the thread stays taut and
+                Before you start stringing, <strong>tie a triple knot around the first pin</strong> and cut off the loose end. <br/>
+                <br/>
+                <strong>Keep tension</strong> on the string at all times to prevent it from slipping off the pins.<br />
+                <br />
+                If you want to take a <strong>break</strong>, simply wind the spool back slightly so the thread stays taut and
                 does not slip off the pins.<br />
+                <br />
                 <span className="italic">
                   Tip: From time to time, gently press the thread lower onto the pins so it stays in place better.
                 </span>

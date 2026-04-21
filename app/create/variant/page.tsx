@@ -135,7 +135,7 @@ export default function SelectVariantPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
       <main className="flex-1">
-        <div className="max-w-[800px] mx-auto px-6 py-12 flex flex-col items-center">
+        <div className="max-w-8xl mx-auto px-6 py-12 flex flex-col items-center">
           <h1 className="text-3xl md:text-4xl font-semibold text-[#171d1a] text-center">
             Select Variant
           </h1>
@@ -152,7 +152,7 @@ export default function SelectVariantPage() {
                   sequence={current.sequence}
                   totalPins={240}
                   size={canvasSize}
-                  strokeColor="#a8a6a6e8e"
+                  strokeColor="#666"
                   strokeWidth={0.2}
                   progressLen={currentProgress}
                 />
@@ -161,23 +161,24 @@ export default function SelectVariantPage() {
           )}
 
           <div className="mt-8 flex items-center justify-center gap-4 flex-wrap">
-            {variants.map((v) => (
+            {variants.map((v,index) => (
               <button
                 key={v.id}
                 onClick={() => setSelected(v.id)}
-                className={`relative w-20 h-20 rounded-full overflow-hidden border border-gray-200 bg-white transition-shadow ${
+                className={`relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-white transition-shadow ${
                   selected === v.id ? "ring-4 ring-[#C5B4A3] shadow-md" : "hover:shadow-sm"
                 }`}
               >
-                <div className="w-full h-full rounded-full overflow-hidden">
-                  <ProgressiveStringPreview
+                <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                  <span className="text-sm font-semibold text-gray-700">{index + 1}</span>
+                  {/* <ProgressiveStringPreview
                     sequence={v.sequence}
                     totalPins={240}
                     size={80}
-                    strokeColor="#777"
-                    strokeWidth={0.01}
+                    strokeColor="#888"
+                    strokeWidth={0.2}
                     progressLen={progress[v.id] ?? 0}
-                  />
+                  /> */}
                 </div>
               </button>
             ))}

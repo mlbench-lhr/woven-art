@@ -346,7 +346,7 @@ export default function MyArtworksPage() {
                           sequence={it.finalSequence}
                           totalPins={it.totalPins}
                           size={180}
-                          strokeColor="#777"
+                          strokeColor="#666"
                           strokeWidth={0.1}
                         />
                       ) : (

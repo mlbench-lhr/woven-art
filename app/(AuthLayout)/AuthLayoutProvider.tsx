@@ -11,7 +11,7 @@ export function AuthLayoutProvider({
     <div className="min-h-screen w-full bg-white grid grid-cols-1 md:grid-cols-2">
       <div className="relative w-full h-[40vh] md:h-auto md:min-h-screen">
         <Image
-          src={"/auth_image.png"}
+          src={"/banner_mobile.png"}
           alt="Auth Illustration"
           fill
           priority

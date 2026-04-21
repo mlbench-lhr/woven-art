@@ -152,7 +152,7 @@ export default function SelectVariantPage() {
                   sequence={current.sequence}
                   totalPins={240}
                   size={canvasSize}
-                  strokeColor="#666"
+                  strokeColor="#777"
                   strokeWidth={0.2}
                   progressLen={currentProgress}
                 />

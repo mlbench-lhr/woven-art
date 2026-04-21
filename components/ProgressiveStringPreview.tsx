@@ -43,17 +43,17 @@ export default function ProgressiveStringPreview({
     if (!ctx) return;
 
     // Optimize for pixel-perfect rendering
-    ctx.imageSmoothingEnabled = false;
-    ctx.imageSmoothingQuality = 'high';
+    // ctx.imageSmoothingEnabled = false;
+    // ctx.imageSmoothingQuality = 'high';
     
     // Scale for crisp rendering on all screens
-    const scale = 1;
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    // const scale = 1;
+    // ctx.setTransform(scale, 0, 0, scale, 0, 0);
     
     ctx.strokeStyle = strokeColor;
     ctx.lineWidth = strokeWidth;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    // ctx.lineCap = 'round';
+    // ctx.lineJoin = 'round';
 
     const configKey = `${size}-${totalPins}-${strokeColor}-${strokeWidth}`;
     const needsReset = lastSeqRef.current !== sequence || lastConfigKeyRef.current !== configKey;

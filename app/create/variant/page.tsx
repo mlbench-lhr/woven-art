@@ -268,151 +268,124 @@ async function generateStringArtProgressive({
   onLine: (progressLen: number) => void;
   sequenceOut: number[];
 }) {
-  const size = imageData.width;
+  const SIZE = imageData.width;
   const data = imageData.data;
-    const pixels = new Float32Array(size * size);
-    const base = new Uint8Array(size * size);
-    for (let i = 0; i < size * size; i++) {
-      const r = data[i * 4];
-      const g = data[i * 4 + 1];
-      const b = data[i * 4 + 2];
-      base[i] = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-    }
-    const blurH = new Float32Array(size * size);
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        const x0 = x > 0 ? x - 1 : 0;
-        const x1 = x;
-        const x2 = x + 1 < size ? x + 1 : size - 1;
-        const idx = y * size;
-        blurH[idx + x] = (base[idx + x0] + base[idx + x1] + base[idx + x2]) / 3;
-      }
-    }
-    const blurred = new Uint8Array(size * size);
-    for (let y = 0; y < size; y++) {
-      const y0 = y > 0 ? y - 1 : 0;
-      const y1 = y;
-      const y2 = y + 1 < size ? y + 1 : size - 1;
-      for (let x = 0; x < size; x++) {
-        const v = (blurH[y0 * size + x] + blurH[y1 * size + x] + blurH[y2 * size + x]) / 3;
-        blurred[y * size + x] = Math.round(v);
-      }
-    }
-    const hist = new Uint32Array(256);
-    for (let i = 0; i < blurred.length; i++) hist[blurred[i]]++;
-    const total = size * size;
-    const lowCount = Math.floor(total * 0.02);
-    const highCount = Math.floor(total * 0.98);
-    let acc = 0;
-    let pLow = 0;
-    for (let i = 0; i < 256; i++) {
-      acc += hist[i];
-      if (acc >= lowCount) { pLow = i; break; }
-    }
-    acc = 0;
-    let pHigh = 255;
-    for (let i = 0; i < 256; i++) {
-      acc += hist[i];
-      if (acc >= highCount) { pHigh = i; break; }
-    }
-    if (pHigh <= pLow) { pLow = 0; pHigh = 255; }
-    const range = pHigh - pLow;
-    const gamma = 0.9;
-    for (let i = 0; i < pixels.length; i++) {
-      let v = (blurred[i] - pLow) / range;
-      if (v < 0) v = 0;
-      else if (v > 1) v = 1;
-      v = Math.pow(v, gamma);
-      pixels[i] = Math.round(v * 255);
-    }
+  const RADIUS = SIZE / 2 - 10;
+  const cx = SIZE / 2, cy = SIZE / 2;
+  const N = totalPins;
 
-  const working = new Float32Array(pixels);
-  const pins: { x: number; y: number }[] = [];
-  const center = size / 2;
-  const radius = size / 2 - 1;
-  for (let i = 0; i < totalPins; i++) {
-    const angle = (2 * Math.PI * i) / totalPins;
-    pins.push({ x: Math.round(center + radius * Math.cos(angle)), y: Math.round(center + radius * Math.sin(angle)) });
+  // Convert to grayscale and create darkness map with brightness/contrast adjustment
+  const grayBuffer = new Float32Array(SIZE * SIZE);
+  const R2 = RADIUS * RADIUS;
+  const BRIGHTNESS = 0.1;  // Increase to make overall brighter (0.0 = normal, 0.2 = much brighter)
+  const CONTRAST = 1.3;     // Increase to make more contrast (1.0 = normal, 1.5 = high contrast)
+  
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const dx = x - cx, dy = y - cy;
+      if (dx * dx + dy * dy <= R2) {
+        const i = (y * SIZE + x) * 4;
+        const g = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
+        
+        // Apply brightness and contrast adjustments
+        let adjusted = g + BRIGHTNESS;
+        adjusted = (adjusted - 0.5) * CONTRAST + 0.5;
+        adjusted = Math.max(0, Math.min(1, adjusted));
+        
+        grayBuffer[y * SIZE + x] = 1.0 - adjusted;
+      }
+    }
   }
 
-  function linePixels(p1: { x: number; y: number }, p2: { x: number; y: number }): number[] {
+  // Generate pins
+  const pinsX = new Float32Array(N);
+  const pinsY = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const a = 2 * Math.PI * i / N;
+    pinsX[i] = cx + RADIUS * Math.cos(a);
+    pinsY[i] = cy + RADIUS * Math.sin(a);
+  }
+
+  // Bresenham line algorithm
+  function bresenham(x0: number, y0: number, x1: number, y1: number): Int32Array {
+    x0 = Math.round(x0); y0 = Math.round(y0);
+    x1 = Math.round(x1); y1 = Math.round(y1);
     const pts: number[] = [];
-    let x0 = p1.x, y0 = p1.y;
-    let x1 = p2.x, y1 = p2.y;
-    const dx = Math.abs(x1 - x0);
-    const dy = Math.abs(y1 - y0);
-    const sx = x0 < x1 ? 1 : -1;
-    const sy = y0 < y1 ? 1 : -1;
+    let dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+    let sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
     let err = dx - dy;
-    while (true) {
-      pts.push(y0 * size + x0);
+    for (;;) {
+      if (x0 >= 0 && x0 < SIZE && y0 >= 0 && y0 < SIZE) {
+        const dx = x0 - cx, dy = y0 - cy;
+        if (dx * dx + dy * dy <= R2) pts.push(y0 * SIZE + x0);
+      }
       if (x0 === x1 && y0 === y1) break;
-      const e2 = err * 2;
+      const e2 = err << 1;
       if (e2 > -dy) { err -= dy; x0 += sx; }
       if (e2 < dx) { err += dx; y0 += sy; }
     }
-    return pts;
+    return new Int32Array(pts);
   }
 
-  const cache = new Map<string, number[]>();
-  function getLine(i: number, j: number): number[] {
-    const key = i < j ? `${i}-${j}` : `${j}-${i}`;
-    let v = cache.get(key);
-    if (!v) {
-      v = linePixels(pins[i], pins[j]);
-      cache.set(key, v);
+  // Precompute all lines
+  const lines = new Array(N * N);
+  for (let i = 0; i < N; i++) {
+    for (let j = i + 1; j < N; j++) {
+      lines[i * N + j] = bresenham(pinsX[i], pinsY[i], pinsX[j], pinsY[j]);
     }
-    return v;
   }
+
+  function getLine(a: number, b: number): Int32Array {
+    return a < b ? lines[a * N + b] : lines[b * N + a];
+  }
+
+  // Generate sequence using greedy algorithm
+  const img = new Float32Array(grayBuffer);
+  const WEIGHT = 0.18;
+  const MIN_DIST = 20;
+  const SKIP = 20;
+  const seq = new Array(totalLines + 1);
+  seq[0] = seed % N;
+  let cur = seq[0];
+  const recentArr = new Array(SKIP).fill(-1);
+  const recentSet = new Set();
+  let rHead = 0;
 
   sequenceOut.length = 0;
-  let current = seed % totalPins;
-  const MIN_DIST = 15;
-  const MAX_BRIGHTNESS = 255;
 
-  let lastReport = 0;
   for (let step = 0; step < totalLines; step++) {
-    sequenceOut.push(current);
-
-    let bestPin = -1;
-    let bestScore = -Infinity;
-    let bestLine: number[] | null = null;
-
-    for (let i = 0; i < totalPins; i++) {
-      if (i === current) continue;
-      const dist = Math.abs(i - current);
-      if (dist < MIN_DIST || dist > totalPins - MIN_DIST) continue;
-      const line = getLine(current, i);
+    let bestScore = -1, bestPin = -1;
+    for (let j = 0; j < N; j++) {
+      if (j === cur || recentSet.has(j)) continue;
+      const dist = Math.min(Math.abs(j - cur), N - Math.abs(j - cur));
+      if (dist < MIN_DIST) continue;
+      const line = getLine(cur, j);
+      const len = line.length;
+      if (len === 0) continue;
       let score = 0;
-      for (const idx of line) score += MAX_BRIGHTNESS - working[idx];
-      score /= line.length;
-      if (score > bestScore) {
-        bestScore = score;
-        bestPin = i;
-        bestLine = line;
-      }
+      for (let k = 0; k < len; k++) score += img[line[k]];
+      score /= len;
+      if (score > bestScore) { bestScore = score; bestPin = j; }
     }
+    if (bestPin === -1) bestPin = (cur + (N >> 1)) % N;
+    const line = getLine(cur, bestPin);
+    for (let k = 0; k < line.length; k++) img[line[k]] = Math.max(0, img[line[k]] - WEIGHT);
+    seq[step + 1] = bestPin;
+    const evict = recentArr[rHead];
+    if (evict !== -1) recentSet.delete(evict);
+    recentArr[rHead] = cur;
+    recentSet.add(cur);
+    rHead = (rHead + 1) % SKIP;
+    cur = bestPin;
 
-    if (bestPin === -1 || !bestLine) {
-      bestPin = (current + totalPins / 2) % totalPins;
-      bestLine = getLine(current, bestPin);
-    }
-
-    const weight = 12 + (step / totalLines) * 20;
-    for (const idx of bestLine) {
-      const v = working[idx] + weight;
-      working[idx] = v > MAX_BRIGHTNESS ? MAX_BRIGHTNESS : v;
-    }
-
-    current = bestPin;
-
-    if (step - lastReport >= 1 || step === totalLines - 1) {
-      lastReport = step;
+    sequenceOut.push(cur);
+    
+    if (step - 0 >= 1 || step === totalLines - 1) {
       onLine(sequenceOut.length - 1);
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
     }
   }
 
-  sequenceOut.push(current);
+  sequenceOut.push(cur);
   onLine(sequenceOut.length - 1);
 }

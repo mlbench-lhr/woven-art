@@ -11,12 +11,18 @@ type Props = {
   progressLen?: number;
 };
 
+/**
+ * Renders string art on a 3× hi-res canvas (physical pixels = size*3),
+ * displayed at `size` CSS px — identical to the HTML reference tool.
+ *
+ * lineWidth = 0.85 px on the 3× canvas ≈ 0.28 px visual → razor-sharp threads.
+ */
 export default function ProgressiveStringPreview({
   sequence,
   totalPins,
   size,
-  strokeColor = "#bbb",
-  strokeWidth = 0.2,
+  strokeColor = "rgba(10,10,10,0.22)",
+  strokeWidth = 0.85,
   progressLen,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -24,17 +30,26 @@ export default function ProgressiveStringPreview({
   const lastConfigKeyRef = useRef<string>("");
   const drawnToRef = useRef(0);
 
+  // The internal (physical) canvas resolution
+  const SCALE = 3;
+  const hiSize = size * SCALE;
+
+  // Nail positions at hi-res — matches the HTML exactly:
+  //   r = size/2 - 1 (logical), angle = (i/N)*2π - π
   const pins = useMemo(() => {
     const pts: { x: number; y: number }[] = [];
-    const radius = size / 2 - 2;
-    const cx = size / 2;
-    const cy = size / 2;
+    const r = hiSize / 2 - SCALE; // = (size/2 - 1) * SCALE
+    const cx = hiSize / 2;
+    const cy = hiSize / 2;
     for (let i = 0; i < totalPins; i++) {
       const angle = (2 * Math.PI * i) / totalPins;
-      pts.push({ x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) });
+      pts.push({
+        x: Math.round(cx + r * Math.cos(angle)),
+        y: Math.round(cy + r * Math.sin(angle)),
+      });
     }
     return pts;
-  }, [size, totalPins]);
+  }, [hiSize, totalPins]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -42,30 +57,27 @@ export default function ProgressiveStringPreview({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Optimize for pixel-perfect rendering
-    // ctx.imageSmoothingEnabled = false;
-    // ctx.imageSmoothingQuality = 'high';
-    
-    // Scale for crisp rendering on all screens
-    // const scale = 1;
-    // ctx.setTransform(scale, 0, 0, scale, 0, 0);
-    
     ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = strokeWidth;
-    // ctx.lineCap = 'round';
-    // ctx.lineJoin = 'round';
+    ctx.lineWidth = strokeWidth; // 0.85 px on the 3× surface
 
     const configKey = `${size}-${totalPins}-${strokeColor}-${strokeWidth}`;
-    const needsReset = lastSeqRef.current !== sequence || lastConfigKeyRef.current !== configKey;
+    const needsReset =
+      lastSeqRef.current !== sequence || lastConfigKeyRef.current !== configKey;
+
     if (needsReset) {
       lastSeqRef.current = sequence;
       lastConfigKeyRef.current = configKey;
       drawnToRef.current = 0;
-      ctx.clearRect(0, 0, size, size);
+      // White background, same as the HTML reference
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, hiSize, hiSize);
     }
 
     const maxIndex = sequence.length - 1;
-    const target = Math.min(typeof progressLen === "number" ? progressLen : maxIndex, maxIndex);
+    const target = Math.min(
+      typeof progressLen === "number" ? progressLen : maxIndex,
+      maxIndex
+    );
     const start = Math.max(1, drawnToRef.current + 1);
 
     for (let i = start; i <= target; i++) {
@@ -81,8 +93,16 @@ export default function ProgressiveStringPreview({
     }
 
     drawnToRef.current = Math.max(drawnToRef.current, target);
-  }, [pins, progressLen, sequence, size, strokeColor, strokeWidth]);
+  }, [pins, progressLen, sequence, hiSize, strokeColor, strokeWidth]);
 
-  return <canvas ref={canvasRef} width={size} height={size} className="block rounded-full w-full h-full" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      // Physical size = 3× for sharpness; CSS size = logical `size`
+      width={hiSize}
+      height={hiSize}
+      style={{ width: size, height: size, imageRendering: "crisp-edges" }}
+      className="block rounded-full w-full h-full"
+    />
+  );
 }
-

@@ -6,7 +6,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import CanvasStringArt from "@/components/CanvasStringArt";
+import ProgressiveStringPreview from "@/components/ProgressiveStringPreview";
+import { createOriginalSequenceFromMirrored } from "@/lib/stringArtGenerator";
 import InstructionCodeModal from "@/components/SmallComponents/InstructionCodeModal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -342,12 +343,12 @@ export default function MyArtworksPage() {
                       }}
                     >
                       {it.finalSequence ? (
-                        <CanvasStringArt
-                          sequence={it.finalSequence}
+                        <ProgressiveStringPreview
+                          sequence={createOriginalSequenceFromMirrored(it.finalSequence, it.totalPins)}
                           totalPins={it.totalPins}
                           size={180}
-                          strokeColor="#666"
-                          strokeWidth={0.1}
+                          strokeColor="rgba(10,10,10,0.15)"
+                          strokeWidth={0.85}
                         />
                       ) : (
                         <span className="text-[10px] text-gray-400 font-medium">No preview</span>

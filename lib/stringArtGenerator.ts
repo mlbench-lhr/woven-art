@@ -1,16 +1,40 @@
 import { ImageData } from "canvas"
 
-type Pin = {
-  x: number
-  y: number
-}
-
 type GenerateStringArtParams = {
   imageData: ImageData
   totalPins?: number
   totalLines?: number
   seed?: number
   onLine?: (progressLen: number) => void
+}
+
+/**
+ * Creates a mirrored sequence for wall hanging
+ * When the string art is hung on a wall, it needs to be mirrored horizontally
+ * to appear correct when viewed from the front
+ */
+export function createMirroredSequence(sequence: number[], totalPins: number): number[] {
+  const mirrored = [...sequence];
+  for (let i = 1; i < mirrored.length; i++) {
+    // Mirror the pin index across the vertical axis
+    // Pin 0 stays 0, Pin 1 becomes totalPins-1, Pin 2 becomes totalPins-2, etc.
+    mirrored[i] = (totalPins - mirrored[i]) % totalPins;
+  }
+  return mirrored;
+}
+
+/**
+ * Creates the original sequence from a mirrored sequence
+ * Used for displaying the correct preview in dashboard when database contains mirrored sequence
+ */
+export function createOriginalSequenceFromMirrored(mirroredSequence: number[], totalPins: number): number[] {
+  const original = [...mirroredSequence];
+  for (let i = 1; i < original.length; i++) {
+    // Reverse the mirror operation
+    // Pin 0 stays 0, Pin totalPins-1 becomes 1, Pin totalPins-2 becomes 2, etc.
+    original[i] = (totalPins - original[i]) % totalPins;
+  }
+  return original;
 }
 
 export async function generateStringArt({

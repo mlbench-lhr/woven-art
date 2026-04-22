@@ -17,6 +17,7 @@ export default function SelectVariantPage() {
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [generating, setGenerating] = useState(false);
   const generatingRef = useRef(false);
+  const hasGeneratedOnce = useRef(false);
 
   useEffect(() => {
     if (variants.length > 0 && !selected) setSelected(variants[0].id);
@@ -38,6 +39,11 @@ export default function SelectVariantPage() {
 
   useEffect(() => {
     if (generatingRef.current) return;
+    // Prevent regeneration if we already have valid variants and have generated once
+    if (hasGeneratedOnce.current && variants.length > 0 && 
+        variants.every((v) => typeof v?.lines === "number" && Array.isArray(v?.sequence) && v.sequence.length === v.lines + 1)) {
+      return;
+    }
 
     const run = async () => {
       setGenerating(true);
@@ -45,15 +51,15 @@ export default function SelectVariantPage() {
         if (variants.some((v) => typeof v?.lines !== "number" || !Array.isArray(v?.sequence) || v.sequence.length !== v.lines + 1)) {
           try {
             sessionStorage.removeItem("stringArtVariants");
-          } catch {}
+          } catch { }
           setVariants([] as any);
         } else {
-        const initialProgress: Record<string, number> = {};
-        for (const v of variants) initialProgress[v.id] = 0;
-        setProgress(initialProgress);
-        animateStoredVariants(variants, setProgress);
-        setGenerating(false);
-        return;
+          const initialProgress: Record<string, number> = {};
+          for (const v of variants) initialProgress[v.id] = 0;
+          setProgress(initialProgress);
+          animateStoredVariants(variants, setProgress);
+          setGenerating(false);
+          return;
         }
       }
 
@@ -64,7 +70,7 @@ export default function SelectVariantPage() {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length > 0) stored = parsed;
         }
-      } catch {}
+      } catch { }
 
       if (stored && stored.every((v) => typeof v?.lines === "number" && Array.isArray(v?.sequence) && v.sequence.length === v.lines + 1)) {
         setVariants(stored as any);
@@ -78,7 +84,7 @@ export default function SelectVariantPage() {
       if (stored) {
         try {
           sessionStorage.removeItem("stringArtVariants");
-        } catch {}
+        } catch { }
       }
 
       generatingRef.current = true;
@@ -88,7 +94,7 @@ export default function SelectVariantPage() {
           setGenerating(false);
           return;
         }
-        const imageData = await prepareImage(preview, 360);
+        const imageData = await prepareImage(preview, 400);
         const totalPins = 240;
         const cfgs = [
           { id: "v1", lines: 2700, seed: 0 },
@@ -106,7 +112,7 @@ export default function SelectVariantPage() {
             const target = live.find((x) => x.id === c.id)!;
             await generateStringArtProgressive({
               imageData,
-              totalPins: totalPins,
+              totalPins,
               totalLines: c.lines,
               seed: c.seed,
               onLine: (seqLen) => {
@@ -119,7 +125,8 @@ export default function SelectVariantPage() {
 
         try {
           sessionStorage.setItem("stringArtVariants", JSON.stringify(live));
-        } catch {}
+          hasGeneratedOnce.current = true; // Mark that we've successfully generated once
+        } catch { }
       } catch (e) {
         console.error(e);
       } finally {
@@ -144,7 +151,7 @@ export default function SelectVariantPage() {
 
           {current && (
             <div className="mt-10 w-full flex justify-center">
-              <div 
+              <div
                 className="relative bg-white rounded-full shadow-lg border border-gray-100 overflow-hidden"
                 style={{ width: canvasSize, height: canvasSize }}
               >
@@ -152,8 +159,8 @@ export default function SelectVariantPage() {
                   sequence={current.sequence}
                   totalPins={240}
                   size={canvasSize}
-                  strokeColor="#777"
-                  strokeWidth={0.2}
+                  strokeColor="rgba(10,10,10,0.22)"
+                  strokeWidth={0.85}
                   progressLen={currentProgress}
                 />
               </div>
@@ -161,24 +168,15 @@ export default function SelectVariantPage() {
           )}
 
           <div className="mt-8 flex items-center justify-center gap-4 flex-wrap">
-            {variants.map((v,index) => (
+            {variants.map((v, index) => (
               <button
                 key={v.id}
                 onClick={() => setSelected(v.id)}
-                className={`relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-white transition-shadow ${
-                  selected === v.id ? "ring-4 ring-[#C5B4A3] shadow-md" : "hover:shadow-sm"
-                }`}
+                className={`relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-white transition-shadow ${selected === v.id ? "ring-4 ring-[#C5B4A3] shadow-md" : "hover:shadow-sm"
+                  }`}
               >
                 <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
                   <span className="text-sm font-semibold text-gray-700">{index + 1}</span>
-                  {/* <ProgressiveStringPreview
-                    sequence={v.sequence}
-                    totalPins={240}
-                    size={80}
-                    strokeColor="#888"
-                    strokeWidth={0.2}
-                    progressLen={progress[v.id] ?? 0}
-                  /> */}
                 </div>
               </button>
             ))}
@@ -193,7 +191,7 @@ export default function SelectVariantPage() {
               onClick={() => {
                 try {
                   if (selected) sessionStorage.setItem("selectedVariantId", selected);
-                } catch {}
+                } catch { }
                 router.push(`/create/artwork?variant=${encodeURIComponent(selected || "")}`);
               }}
               disabled={!selected || generating}
@@ -208,7 +206,11 @@ export default function SelectVariantPage() {
   );
 }
 
-async function prepareImage(src: string, size = 360): Promise<ImageData> {
+// ─────────────────────────────────────────────
+//  Helpers
+// ─────────────────────────────────────────────
+
+async function prepareImage(src: string, size = 400): Promise<ImageData> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -241,10 +243,10 @@ function animateStoredVariants(
     for (const v of stored) {
       const max = Math.max(0, v.sequence.length - 1);
       const cur = state[v.id] ?? 0;
-        if (cur < max) {
-          state[v.id] = Math.min(max, cur + 2);
-          allDone = false;
-        }
+      if (cur < max) {
+        state[v.id] = Math.min(max, cur + 2);
+        allDone = false;
+      }
     }
     setProgressFn({ ...state });
     if (!allDone) raf = window.requestAnimationFrame(step);
@@ -252,6 +254,18 @@ function animateStoredVariants(
   raf = window.requestAnimationFrame(step);
   return () => window.cancelAnimationFrame(raf);
 }
+
+// ─────────────────────────────────────────────
+//  Core algorithm — ported from string-art-sharp-240.html
+//
+//  Key differences vs the old version:
+//   • Runs at 3× internal hi-res (SCALE=3) for razor-sharp lines
+//   • Error-buffer approach (errR initialized from luminance, depleted per string)
+//   • strength = 0.12  (matches the HTML default)
+//   • No MIN_DIST / SKIP / recent-set — every nail is always a candidate
+//   • Early-exit when best score ≤ 0 (no more dark pixels to cover)
+//   • Nail positions: r = size/2 - 1 (scaled), angle = (i/N)*2π  (standard, no offset)
+// ─────────────────────────────────────────────
 
 async function generateStringArtProgressive({
   imageData,
@@ -268,124 +282,118 @@ async function generateStringArtProgressive({
   onLine: (progressLen: number) => void;
   sequenceOut: number[];
 }) {
-  const SIZE = imageData.width;
-  const data = imageData.data;
-  const RADIUS = SIZE / 2 - 10;
-  const cx = SIZE / 2, cy = SIZE / 2;
+  const SIZE = imageData.width;          // logical size (400 px)
+  const SCALE = 3;
+  const hiSize = SIZE * SCALE;           // internal hi-res size (1200 px)
   const N = totalPins;
 
-  // Convert to grayscale and create darkness map with brightness/contrast adjustment
-  const grayBuffer = new Float32Array(SIZE * SIZE);
-  const R2 = RADIUS * RADIUS;
-  const BRIGHTNESS = 0.1;  // Increase to make overall brighter (0.0 = normal, 0.2 = much brighter)
-  const CONTRAST = 1.3;     // Increase to make more contrast (1.0 = normal, 1.5 = high contrast)
-  
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
-      const dx = x - cx, dy = y - cy;
-      if (dx * dx + dy * dy <= R2) {
-        const i = (y * SIZE + x) * 4;
-        const g = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
-        
-        // Apply brightness and contrast adjustments
-        let adjusted = g + BRIGHTNESS;
-        adjusted = (adjusted - 0.5) * CONTRAST + 0.5;
-        adjusted = Math.max(0, Math.min(1, adjusted));
-        
-        grayBuffer[y * SIZE + x] = 1.0 - adjusted;
-      }
-    }
+  // ── 1. Upscale reference image to hi-res ──
+  const srcCanvas = document.createElement("canvas");
+  srcCanvas.width = srcCanvas.height = SIZE;
+  srcCanvas.getContext("2d")!.putImageData(imageData, 0, 0);
+
+  const refCanvas = document.createElement("canvas");
+  refCanvas.width = refCanvas.height = hiSize;
+  const rctx = refCanvas.getContext("2d")!;
+  rctx.drawImage(srcCanvas, 0, 0, hiSize, hiSize);
+  const ref = rctx.getImageData(0, 0, hiSize, hiSize).data;
+
+  // ── 2. Error buffer (darkness remaining per pixel) ──
+  const numPx = hiSize * hiSize;
+  const errR = new Float32Array(numPx);
+  for (let i = 0; i < numPx; i++) {
+    const lum = (0.299 * ref[i * 4] + 0.587 * ref[i * 4 + 1] + 0.114 * ref[i * 4 + 2]) / 255;
+    errR[i] = 1 - lum; // darkness: 1 = black, 0 = white
   }
 
-  // Generate pins
-  const pinsX = new Float32Array(N);
-  const pinsY = new Float32Array(N);
+  // ── 3. Nail positions at hi-res ──
+  const nailsX = new Float32Array(N);
+  const nailsY = new Float32Array(N);
+  const r = hiSize / 2 - SCALE; // r = size/2-1 scaled
+  const cx = hiSize / 2;
+  const cy = hiSize / 2;
   for (let i = 0; i < N; i++) {
-    const a = 2 * Math.PI * i / N;
-    pinsX[i] = cx + RADIUS * Math.cos(a);
-    pinsY[i] = cy + RADIUS * Math.sin(a);
+    const angle = (2 * Math.PI * i) / N;
+    nailsX[i] = Math.round(cx + r * Math.cos(angle));
+    nailsY[i] = Math.round(cy + r * Math.sin(angle));
   }
 
-  // Bresenham line algorithm
-  function bresenham(x0: number, y0: number, x1: number, y1: number): Int32Array {
-    x0 = Math.round(x0); y0 = Math.round(y0);
-    x1 = Math.round(x1); y1 = Math.round(y1);
+  // ── 4. Bresenham line pixels (hi-res coords) ──
+  function linePixels(x0: number, y0: number, x1: number, y1: number): Int32Array {
     const pts: number[] = [];
     let dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
     let sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
     let err = dx - dy;
-    for (;;) {
-      if (x0 >= 0 && x0 < SIZE && y0 >= 0 && y0 < SIZE) {
-        const dx = x0 - cx, dy = y0 - cy;
-        if (dx * dx + dy * dy <= R2) pts.push(y0 * SIZE + x0);
-      }
+    for (; ;) {
+      if (x0 >= 0 && x0 < hiSize && y0 >= 0 && y0 < hiSize) pts.push(y0 * hiSize + x0);
       if (x0 === x1 && y0 === y1) break;
-      const e2 = err << 1;
+      const e2 = err * 2;
       if (e2 > -dy) { err -= dy; x0 += sx; }
       if (e2 < dx) { err += dx; y0 += sy; }
     }
     return new Int32Array(pts);
   }
 
-  // Precompute all lines
-  const lines = new Array(N * N);
+  // ── 5. Precompute all unique line pixel lists ──
+  const lines = new Array<Int32Array>(N * N);
   for (let i = 0; i < N; i++) {
     for (let j = i + 1; j < N; j++) {
-      lines[i * N + j] = bresenham(pinsX[i], pinsY[i], pinsX[j], pinsY[j]);
+      lines[i * N + j] = linePixels(nailsX[i], nailsY[i], nailsX[j], nailsY[j]);
     }
   }
-
   function getLine(a: number, b: number): Int32Array {
     return a < b ? lines[a * N + b] : lines[b * N + a];
   }
 
-  // Generate sequence using greedy algorithm
-  const img = new Float32Array(grayBuffer);
-  const WEIGHT = 0.18;
-  const MIN_DIST = 20;
-  const SKIP = 20;
-  const seq = new Array(totalLines + 1);
-  seq[0] = seed % N;
-  let cur = seq[0];
-  const recentArr = new Array(SKIP).fill(-1);
-  const recentSet = new Set();
-  let rHead = 0;
+  // ── 6. Greedy algorithm ──
+  const STRENGTH = 0.45;  // depletion per string — higher = lighter result, less over-darkening
+  const MIN_LINE = 10 * SCALE; // minimum line length in hi-res pixels
 
   sequenceOut.length = 0;
+  let cur = seed % N;
+  sequenceOut.push(cur);
 
-  for (let step = 0; step < totalLines; step++) {
-    let bestScore = -1, bestPin = -1;
-    for (let j = 0; j < N; j++) {
-      if (j === cur || recentSet.has(j)) continue;
-      const dist = Math.min(Math.abs(j - cur), N - Math.abs(j - cur));
-      if (dist < MIN_DIST) continue;
-      const line = getLine(cur, j);
-      const len = line.length;
-      if (len === 0) continue;
-      let score = 0;
-      for (let k = 0; k < len; k++) score += img[line[k]];
-      score /= len;
-      if (score > bestScore) { bestScore = score; bestPin = j; }
-    }
-    if (bestPin === -1) bestPin = (cur + (N >> 1)) % N;
-    const line = getLine(cur, bestPin);
-    for (let k = 0; k < line.length; k++) img[line[k]] = Math.max(0, img[line[k]] - WEIGHT);
-    seq[step + 1] = bestPin;
-    const evict = recentArr[rHead];
-    if (evict !== -1) recentSet.delete(evict);
-    recentArr[rHead] = cur;
-    recentSet.add(cur);
-    rHead = (rHead + 1) % SKIP;
-    cur = bestPin;
+  const BATCH = 8; // Smaller batch for smoother time lapse effect
 
-    sequenceOut.push(cur);
-    
-    if (step - 0 >= 1 || step === totalLines - 1) {
-      onLine(sequenceOut.length - 1);
-      await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+  for (let step = 0; step < totalLines;) {
+    const chunkEnd = Math.min(step + BATCH, totalLines);
+
+    for (let i = step; i < chunkEnd; i++) {
+      // Pick best nail
+      let bestScore = -Infinity;
+      let bestNail = -1;
+
+      for (let j = 0; j < N; j++) {
+        if (j === cur) continue;
+        const pts = getLine(cur, j);
+        if (pts.length < MIN_LINE) continue;
+        let score = 0;
+        for (let k = 0; k < pts.length; k++) score += errR[pts[k]];
+        score /= pts.length;
+        if (score > bestScore) { bestScore = score; bestNail = j; }
+      }
+
+      // Early exit if no improvement possible
+      if (bestNail < 0 || bestScore <= 0) {
+        step = totalLines;
+        break;
+      }
+
+      // Deplete error along the chosen line
+      const chosen = getLine(cur, bestNail);
+      for (let k = 0; k < chosen.length; k++) {
+        errR[chosen[k]] = Math.max(0, errR[chosen[k]] - STRENGTH);
+      }
+
+      cur = bestNail;
+      sequenceOut.push(cur);
     }
+
+    step = Math.min(step + BATCH, totalLines);
+    onLine(sequenceOut.length - 1);
+    // Time lapse effect - pause between batches for visual appeal
+    await new Promise<void>((resolve) => setTimeout(resolve, 50));
   }
 
-  sequenceOut.push(cur);
   onLine(sequenceOut.length - 1);
 }

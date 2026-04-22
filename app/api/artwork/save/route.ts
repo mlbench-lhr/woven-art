@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb/connection";
 import { StringArt } from "@/lib/mongodb/models/StringArt";
 import { verifyToken } from "@/lib/auth/jwt";
 import User from "@/lib/mongodb/models/User";
+import { createMirroredSequence } from "@/lib/stringArtGenerator";
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,11 +42,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Create mirrored sequence for wall hanging and save it as finalSequence
+    const mirroredSequence = createMirroredSequence(sequence, 240);
+
     const stringArt = await StringArt.create({
       userId: user._id.toString(),
       totalPins: 240,
       totalLines,
-      finalSequence: sequence,
+      finalSequence: mirroredSequence, // Save only mirrored sequence for wall hanging
       thumbnail: thumbnail || null,
       clientRequestId: clientRequestId && typeof clientRequestId === "string" ? clientRequestId : null,
     });

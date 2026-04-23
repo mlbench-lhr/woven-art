@@ -8,19 +8,13 @@ import { createMirroredSequence } from "@/lib/stringArtGenerator";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log("Save API received body:", body);
 
-    const { totalLines, sequence, thumbnail, clientRequestId } = body;
+    const { variantId, thumbnail, clientRequestId } = body;
 
-    if (!totalLines || !sequence) {
+    if (!variantId) {
       return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    if (!Array.isArray(sequence) || sequence.length !== Number(totalLines) + 1) {
-      return NextResponse.json(
-        { error: "Invalid sequence length. Regenerate the artwork and try again." },
+        { error: "Missing variant ID" },
         { status: 400 }
       );
     }
@@ -42,14 +36,55 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Create mirrored sequence for wall hanging and save it as finalSequence
-    const mirroredSequence = createMirroredSequence(sequence, 240);
+    // Get storage variants from session storage (client should send this)
+    let storageVariant = null;
+    console.log("storageVariant from body:", body.storageVariant);
+    console.log("sequence from body:", body.sequence);
+    console.log("totalLines from body:", body.totalLines);
+    
+    if (body.storageVariant && body.storageVariant.lines) {
+      storageVariant = body.storageVariant;
+      console.log("Using storageVariant from body:", storageVariant);
+    } else {
+      // Fallback: create storage variant on server (less efficient)
+      console.log("Using fallback - creating storage variant on server");
+      const { createMirroredSequence } = await import("@/lib/stringArtGenerator");
+      const sequence = body.sequence;
+      const totalLines = body.totalLines;
+      
+      console.log("Fallback sequence:", sequence);
+      console.log("Fallback totalLines:", totalLines);
+      
+      if (!sequence || !totalLines) {
+        console.log("Missing sequence or totalLines in fallback");
+        return NextResponse.json(
+          { error: "Missing sequence data" },
+          { status: 400 }
+        );
+      }
+
+      const mirroredSequence = createMirroredSequence(sequence, 240);
+      storageVariant = {
+        sequence: mirroredSequence,
+        totalLines,
+        totalPins: 240
+      };
+      console.log("Created storageVariant:", storageVariant);
+    }
+
+    // Validate storage variant before saving
+    if (!storageVariant || !storageVariant.lines || !storageVariant.sequence) {
+      return NextResponse.json(
+        { error: "Invalid storage variant data" },
+        { status: 400 }
+      );
+    }
 
     const stringArt = await StringArt.create({
       userId: user._id.toString(),
-      totalPins: 240,
-      totalLines,
-      finalSequence: mirroredSequence, // Save only mirrored sequence for wall hanging
+      totalPins: storageVariant.totalPins || 240,
+      totalLines: storageVariant.lines,
+      finalSequence: storageVariant.sequence, // Already mirrored sequence for wall hanging
       thumbnail: thumbnail || null,
       clientRequestId: clientRequestId && typeof clientRequestId === "string" ? clientRequestId : null,
     });

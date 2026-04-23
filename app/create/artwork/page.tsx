@@ -100,15 +100,52 @@ export default function ArtworkStepsPage() {
     savingRef.current = true;
     setSaving(true);
     try {
+      // Get storage variant with mirrored sequence for database
+      let storageVariant = null;
+      try {
+        const storageVariants = JSON.parse(sessionStorage.getItem("stringArtStorageVariants") || "[]");
+        console.log("Available storage variants:", storageVariants);
+        console.log("Looking for variant ID:", selectedVariant.id);
+        storageVariant = storageVariants.find((v: any) => v.id === selectedVariant.id);
+        console.log("Found storage variant:", storageVariant);
+        
+        if (!storageVariant) {
+          // Fallback: use display variant data but create mirrored sequence
+          console.warn("Storage variant not found, using display variant as fallback");
+          const { createMirroredSequence } = await import("@/lib/stringArtGenerator");
+          storageVariant = {
+            id: selectedVariant.id,
+            lines: selectedVariant.lines / 2, // Convert to storage lines
+            seed: selectedVariant.seed,
+            sequence: createMirroredSequence(selectedVariant.sequence, 240), // Mirror for storage pins
+            totalPins: 240
+          };
+        }
+      } catch (e) {
+        console.error("Failed to get storage variants:", e);
+        // Fallback: use display variant data
+        const { createMirroredSequence } = await import("@/lib/stringArtGenerator");
+        storageVariant = {
+          id: selectedVariant.id,
+          lines: selectedVariant.lines / 2,
+          seed: selectedVariant.seed,
+          sequence: createMirroredSequence(selectedVariant.sequence, 240),
+          totalPins: 240
+        };
+      }
+
+      const requestBody = {
+        variantId: selectedVariant.id,
+        storageVariant: storageVariant, // Send storage variant with mirrored sequence
+        thumbnail: null,
+      };
+      console.log("Sending to save API:", requestBody);
+      
       const res = await fetch("/api/artwork/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          totalLines: selectedVariant.lines,
-          sequence: selectedVariant.sequence,
-          thumbnail: null,
-        }),
+        body: JSON.stringify(requestBody),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
@@ -134,16 +171,25 @@ export default function ArtworkStepsPage() {
     savingRef.current = true;
     setSaving(true);
     try {
+      // Get storage variant with mirrored sequence for database
+      let storageVariant = null;
+      try {
+        const storageVariants = JSON.parse(sessionStorage.getItem("stringArtStorageVariants") || "[]");
+        storageVariant = storageVariants.find((v: any) => v.id === selectedVariant.id);
+      } catch (e) {
+        console.error("Failed to get storage variants:", e);
+      }
+
       const clientRequestId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now());
       const saveRes = await fetch("/api/artwork/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          totalLines: selectedVariant.lines,
-          sequence: selectedVariant.sequence,
-          thumbnail: null,
+          variantId: selectedVariant.id,
+          storageVariant: storageVariant, // Send the storage variant with mirrored sequence
           clientRequestId,
+          thumbnail: null,
         }),
       });
       if (!saveRes.ok) {
@@ -348,14 +394,16 @@ export default function ArtworkStepsPage() {
                 >
                   <ProgressiveStringPreview
                     sequence={selectedVariant.sequence}
-                    totalPins={240}
+                    totalPins={480}
                     size={canvasSize}
                     strokeColor="rgba(10,10,10,0.22)"
                     strokeWidth={0.85}
                   />
                 </div>
                 <div className="mt-8 px-6 py-2 bg-gray-50 rounded-full border border-gray-100">
-                  <span className="text-sm font-semibold text-gray-700">{selectedVariant.lines} lines</span>
+                  <span className="text-sm font-semibold text-gray-700">
+                    {selectedVariant.id === 'v1' ? '2700' : selectedVariant.id === 'v2' ? '3300' : '3700'} lines
+                  </span>
                 </div>
               </div>
             ) : (

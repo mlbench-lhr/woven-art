@@ -7,7 +7,7 @@ import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import ProgressiveStringPreview from "@/components/ProgressiveStringPreview";
-import { createOriginalSequenceFromMirrored } from "@/lib/stringArtGenerator";
+import { createOriginalSequenceFromMirrored, convertStorageToDisplaySequence } from "@/lib/stringArtGenerator";
 import InstructionCodeModal from "@/components/SmallComponents/InstructionCodeModal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -335,7 +335,7 @@ export default function MyArtworksPage() {
 
                     {/* Canvas preview */}
                     <div 
-                      className={`w-[180px] h-[180px] rounded-full overflow-hidden bg-white mt-6 flex items-center justify-center border-4 border-white shadow-md ${isUnlocked ? "cursor-pointer" : ""}`}
+                      className={`w-[220px] h-[220px] rounded-full overflow-hidden bg-white mt-6 flex items-center justify-center border-4 border-white shadow-md ${isUnlocked ? "cursor-pointer" : ""}`}
                       onClick={() => {
                         if (isUnlocked) {
                           router.push(`/create/guided?art=${encodeURIComponent(it._id)}`);
@@ -344,9 +344,9 @@ export default function MyArtworksPage() {
                     >
                       {it.finalSequence ? (
                         <ProgressiveStringPreview
-                          sequence={createOriginalSequenceFromMirrored(it.finalSequence, it.totalPins)}
-                          totalPins={it.totalPins}
-                          size={180}
+                          sequence={convertStorageToDisplaySequence(createOriginalSequenceFromMirrored(it.finalSequence, it.totalPins), it.totalPins, 480)}
+                          totalPins={480}
+                          size={220}
                           strokeColor="rgba(10,10,10,0.15)"
                           strokeWidth={0.85}
                         />

@@ -95,24 +95,34 @@ export default function SelectVariantPage() {
           return;
         }
         const imageData = await prepareImage(preview, 400);
-        const totalPins = 240;
-        const cfgs = [
+        
+        // High-quality display configuration (for stringify-like quality)
+        const displayPins = 480; // Double the pins for better detail
+        const displayCfgs = [
+          { id: "v3", lines: 4200, seed: 137 },  // Reduced for less darkness
+          { id: "v2", lines: 3800, seed: 61 },   // Reduced for less darkness
+          { id: "v1", lines: 3200, seed: 0 },    // Reduced for less darkness
+        ];
+        
+        // Database storage configuration (efficient storage)
+        const storagePins = 240; // Current efficient pin count
+        const storageCfgs = [
           { id: "v1", lines: 2700, seed: 0 },
           { id: "v2", lines: 3300, seed: 61 },
           { id: "v3", lines: 3700, seed: 137 },
         ];
 
-        const live = cfgs.map((c) => ({ id: c.id, lines: c.lines, seed: c.seed, sequence: [] as number[] }));
+        const live = displayCfgs.map((c) => ({ id: c.id, lines: c.lines, seed: c.seed, sequence: [] as number[] }));
         setVariants(live as any);
-        setSelected((s) => s ?? cfgs[0].id);
+        setSelected((s) => s ?? displayCfgs[0].id);
         setProgress({ v1: 0, v2: 0, v3: 0 });
 
         await Promise.all(
-          cfgs.map(async (c) => {
+          displayCfgs.map(async (c) => {
             const target = live.find((x) => x.id === c.id)!;
             await generateStringArtProgressive({
               imageData,
-              totalPins,
+              totalPins: displayPins,
               totalLines: c.lines,
               seed: c.seed,
               onLine: (seqLen) => {
@@ -124,7 +134,13 @@ export default function SelectVariantPage() {
         );
 
         try {
+          // Store high-quality display variants
           sessionStorage.setItem("stringArtVariants", JSON.stringify(live));
+          
+          // Generate and store efficient storage variants for database
+          const storageVariants = await generateStorageVariants(imageData, storageCfgs, storagePins);
+          sessionStorage.setItem("stringArtStorageVariants", JSON.stringify(storageVariants));
+          
           hasGeneratedOnce.current = true; // Mark that we've successfully generated once
         } catch { }
       } catch (e) {
@@ -157,7 +173,7 @@ export default function SelectVariantPage() {
               >
                 <ProgressiveStringPreview
                   sequence={current.sequence}
-                  totalPins={240}
+                  totalPins={480}
                   size={canvasSize}
                   strokeColor="rgba(10,10,10,0.22)"
                   strokeWidth={0.85}
@@ -255,6 +271,44 @@ function animateStoredVariants(
   return () => window.cancelAnimationFrame(raf);
 }
 
+// Generate efficient storage variants with mirrored sequences for database
+async function generateStorageVariants(
+  imageData: ImageData,
+  storageCfgs: Array<{ id: string; lines: number; seed: number }>,
+  storagePins: number
+): Promise<Array<{ id: string; lines: number; seed: number; sequence: number[] }>> {
+  const storageVariants = await Promise.all(
+    storageCfgs.map(async (cfg) => {
+      const sequence: number[] = [];
+      await generateStringArtProgressive({
+        imageData,
+        totalPins: storagePins,
+        totalLines: cfg.lines,
+        seed: cfg.seed,
+        onLine: () => {}, // No progress updates needed for storage variants
+        sequenceOut: sequence,
+      });
+      
+      // Create mirrored sequence for wall hanging
+      const mirroredSequence = createMirroredSequence(sequence, storagePins);
+      
+      return {
+        id: cfg.id,
+        lines: cfg.lines,
+        seed: cfg.seed,
+        sequence: mirroredSequence, // Store mirrored sequence
+      };
+    })
+  );
+  
+  return storageVariants;
+}
+
+// Create mirrored sequence for wall hanging (reverse the nail order)
+function createMirroredSequence(sequence: number[], totalPins: number): number[] {
+  return sequence.map(nail => (totalPins - 1 - nail + totalPins) % totalPins);
+}
+
 // ─────────────────────────────────────────────
 //  Core algorithm — ported from string-art-sharp-240.html
 //
@@ -306,7 +360,7 @@ async function generateStringArtProgressive({
     errR[i] = 1 - lum; // darkness: 1 = black, 0 = white
   }
 
-  // ── 3. Nail positions at hi-res ──
+  // ── 3. Nail positions at hi-res with improved circular arrangement ──
   const nailsX = new Float32Array(N);
   const nailsY = new Float32Array(N);
   const r = hiSize / 2 - SCALE; // r = size/2-1 scaled
@@ -346,7 +400,7 @@ async function generateStringArtProgressive({
   }
 
   // ── 6. Greedy algorithm ──
-  const STRENGTH = 0.45;  // depletion per string — higher = lighter result, less over-darkening
+  const STRENGTH = 0.22;  // depletion per string — higher = lighter result, less over-darkening
   const MIN_LINE = 10 * SCALE; // minimum line length in hi-res pixels
 
   sequenceOut.length = 0;

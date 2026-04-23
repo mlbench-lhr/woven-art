@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StringArt Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --panel: #141414;
+    --border: #2a2a2a;
+    --accent: #c8a96e;
+    --accent2: #e8c99e;
+    --text: #e8e8e0;
+    --muted: #666;
+    --red: #c0392b;
+    --green: #27ae60;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Space Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+    background: rgba(13,13,13,0.95);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+  }
+  .logo span { color: var(--text); font-style: italic; font-weight: 400; }
+
+  .status-bar {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: flex; gap: 1.5rem; align-items: center;
+  }
+
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); display: inline-block; }
+  .dot.active { background: var(--green); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+  main {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    min-height: calc(100vh - 65px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 2rem 1.5rem;
+    display: flex; flex-direction: column; gap: 1.5rem;
+    overflow-y: auto;
+  }
+
+  .section-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.75rem;
+  }
+
+  .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    display: flex; justify-content: space-between;
+  }
+  label .val { color: var(--accent); }
+
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.4); }
+
+  select, input[type=text] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem 0.75rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    border-radius: 3px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  select:focus, input[type=text]:focus { border-color: var(--accent); }
+
+  /* Toggle buttons */
+  .toggle-row {
+    display: flex; gap: 0.5rem;
+  }
+  .toggle-btn {
+    flex: 1;
+    padding: 0.45rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .toggle-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  /* Upload area */
+  .upload-area {
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-area:hover { border-color: var(--accent); }
+  .upload-area.drag { border-color: var(--accent); background: rgba(200,169,110,0.05); }
+  .upload-area input { position: absolute; inset:0; opacity:0; cursor:pointer; }
+  .upload-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .upload-text { font-size: 0.72rem; color: var(--muted); line-height: 1.6; }
+  .upload-text strong { color: var(--accent); font-weight: 400; }
+
+  #thumb-preview {
+    width: 100%; border-radius: 3px; margin-top: 0.5rem;
+    display: none; border: 1px solid var(--border);
+  }
+
+  /* Buttons */
+  .btn-run {
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--accent);
+    border: none;
+    color: #000;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-run::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.15);
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+  }
+  .btn-run:hover::before { transform: translateX(0); }
+  .btn-run:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-secondary {
+    width: 100%;
+    padding: 0.65rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-secondary:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Progress */
+  .progress-wrap {
+    background: var(--bg);
+    border-radius: 2px;
+    overflow: hidden;
+    height: 3px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.1s;
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .stat-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.6rem;
+  }
+  .stat-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .stat-value { font-size: 1rem; color: var(--accent); margin-top: 0.2rem; }
+
+  /* ── CANVAS AREA ── */
+  .canvas-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+    background: radial-gradient(ellipse at center, #1a1a1a 0%, #0d0d0d 70%);
+  }
+
+  .canvas-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+
+  #output-canvas {
+    border-radius: 4px;
+    display: block;
+    box-shadow:
+      0 0 0 1px var(--border),
+      0 20px 60px rgba(0,0,0,0.8),
+      0 0 80px rgba(200,169,110,0.06);
+    max-width: 100%;
+    max-height: 70vh;
+    image-rendering: crisp-edges;
+  }
+
+  /* Corner decorations */
+  .canvas-corner {
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--accent);
+    border-style: solid;
+    border-width: 0;
+  }
+  .canvas-corner.tl { top: -8px; left: -8px; border-top-width: 2px; border-left-width: 2px; }
+  .canvas-corner.tr { top: -8px; right: -8px; border-top-width: 2px; border-right-width: 2px; }
+  .canvas-corner.bl { bottom: -8px; left: -8px; border-bottom-width: 2px; border-left-width: 2px; }
+  .canvas-corner.br { bottom: -8px; right: -8px; border-bottom-width: 2px; border-right-width: 2px; }
+
+  .canvas-placeholder {
+    text-align: center;
+    color: var(--muted);
+    pointer-events: none;
+    position: absolute;
+  }
+  .canvas-placeholder .big { font-size: 4rem; margin-bottom: 1rem; opacity: 0.3; }
+  .canvas-placeholder p { font-size: 0.75rem; line-height: 2; letter-spacing: 0.08em; }
+
+  /* Nail order output */
+  .nail-order-wrap {
+    margin-top: 1rem;
+    width: 100%;
+    max-width: 600px;
+  }
+  .nail-order-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .nail-order-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.75rem;
+    font-size: 0.65rem;
+    color: var(--muted);
+    line-height: 1.8;
+    max-height: 80px;
+    overflow-y: auto;
+    word-break: break-all;
+    display: none;
+  }
+
+  /* Info section at bottom */
+  .info-row {
+    display: flex; gap: 2rem;
+    margin-top: 1rem;
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .info-row a { color: var(--accent); text-decoration: none; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Animated loading ring */
+  .loading-ring {
+    display: none;
+    width: 40px; height: 40px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+  .demo-btn-row {
+    display: flex; flex-wrap: wrap; gap: 0.5rem;
+  }
+  .demo-btn {
+    padding: 0.4rem 0.7rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s;
+  }
+  .demo-btn:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">String<span>Art</span></div>
+  <div class="status-bar">
+    <span><span class="dot" id="status-dot"></span></span>
+    <span id="status-text">READY</span>
+  </div>
+</header>
+
+<main>
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <div>
+      <div class="section-label">Input Image</div>
+      <div class="upload-area" id="upload-area">
+        <input type="file" id="file-input" accept="image/*">
+        <div class="upload-icon">⬆</div>
+        <div class="upload-text">
+          Drop image here or <strong>click to browse</strong><br>
+          PNG, JPG, WEBP supported
+        </div>
+      </div>
+      <img id="thumb-preview" alt="preview">
+    </div>
+
+    <div>
+      <div class="section-label">Demo Images</div>
+      <div class="demo-btn-row">
+        <button class="demo-btn" onclick="loadDemo('face')">Face</button>
+        <button class="demo-btn" onclick="loadDemo('portrait')">Portrait</button>
+        <button class="demo-btn" onclick="loadDemo('eye')">Eye</button>
+        <button class="demo-btn" onclick="loadDemo('circle')">Circle</button>
+        <button class="demo-btn" onclick="loadDemo('star')">Star</button>
+        <button class="demo-btn" onclick="loadDemo('text')">Text</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Canvas</div>
+      <div class="control-group">
+        <label>Output Size <span class="val" id="size-val">400</span>px</label>
+        <input type="range" id="size" min="200" max="700" step="50" value="400">
+      </div>
+      <div class="control-group" style="margin-top:0.75rem">
+        <label>Nail Layout</label>
+        <div class="toggle-row">
+          <button class="toggle-btn active" id="layout-circle" onclick="setLayout('circle')">● Circle</button>
+          <button class="toggle-btn" id="layout-rect" onclick="setLayout('rect')">▪ Square</button>
+        </div>
+      </div>
+      <div class="control-group" style="margin-top:0.75rem">
+        <label>Pins <span class="val">240</span></label>
+        <input type="range" id="nail-step" min="1" max="12" step="1" value="4" style="display:none">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:0.5rem 0.75rem;font-size:0.75rem;color:var(--accent);">240 nails fixed</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Algorithm</div>
+      <div class="control-group">
+        <label>Iterations <span class="val" id="iter-val">2000</span></label>
+        <input type="range" id="iterations" min="200" max="6000" step="100" value="2000">
+      </div>
+      <div class="control-group" style="margin-top:0.75rem">
+        <label>String Strength <span class="val" id="strength-val">0.12</span></label>
+        <input type="range" id="strength" min="0.02" max="0.5" step="0.01" value="0.12">
+      </div>
+      <div class="control-group" style="margin-top:0.75rem">
+        <label>Random Nails (speed) <span class="val" id="rand-val">0</span> <small>(0=all)</small></label>
+        <input type="range" id="rand-nails" min="0" max="150" step="10" value="0">
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Color Mode</div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" id="mode-bw" onclick="setMode('bw')">B/W</button>
+        <button class="toggle-btn" id="mode-wb" onclick="setMode('wb')">W/B</button>
+        <button class="toggle-btn" id="mode-rgb" onclick="setMode('rgb')">RGB</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Progress</div>
+      <div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+      <div class="stats-grid" style="margin-top:0.75rem">
+        <div class="stat-box"><div class="stat-label">Strings</div><div class="stat-value" id="stat-strings">—</div></div>
+        <div class="stat-box"><div class="stat-label">Nails</div><div class="stat-value" id="stat-nails">—</div></div>
+        <div class="stat-box"><div class="stat-label">Elapsed</div><div class="stat-value" id="stat-time">—</div></div>
+        <div class="stat-box"><div class="stat-label">Status</div><div class="stat-value" id="stat-status">—</div></div>
+      </div>
+    </div>
+
+    <button class="btn-run" id="btn-run" onclick="runAlgorithm()">▶ Generate</button>
+    <button class="btn-secondary" id="btn-stop" onclick="stopAlgorithm()" disabled>■ Stop</button>
+    <button class="btn-secondary" id="btn-download" onclick="downloadResult()" disabled>↓ Download PNG</button>
+
+  </div>
+
+  <!-- CANVAS AREA -->
+  <div class="canvas-area" id="canvas-area">
+    <div class="canvas-placeholder" id="placeholder">
+      <div class="big">✦</div>
+      <p>Upload an image or choose a demo<br>then click Generate</p>
+    </div>
+    <div class="canvas-wrapper" id="canvas-wrapper" style="display:none">
+      <div class="canvas-corner tl"></div>
+      <div class="canvas-corner tr"></div>
+      <div class="canvas-corner bl"></div>
+      <div class="canvas-corner br"></div>
+      <div class="loading-ring" id="loading-ring"></div>
+      <canvas id="output-canvas"></canvas>
+    </div>
+    <div class="nail-order-wrap" id="nail-order-wrap" style="display:none">
+      <div class="nail-order-label">Nail Order (real-life instructions)</div>
+      <div class="nail-order-box" id="nail-order-box"></div>
+    </div>
+    <div class="info-row">
+      <span>Based on <a href="https://github.com/kaspar98/StringArt" target="_blank">kaspar98/StringArt</a></span>
+      <span>Greedy algorithm — JS port</span>
+    </div>
+  </div>
+</main>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
+let sourceImageData = null;
+let running = false;
+let stopFlag = false;
+let mode = 'bw';
+let layout = 'circle';
+let nailOrder = [];
+
+// ══════════════════════════════════════════════════════
+//  RANGE BINDINGS
+// ══════════════════════════════════════════════════════
+const bind = (id, valId, fmt) => {
+  const el = document.getElementById(id);
+  const show = document.getElementById(valId);
+  el.addEventListener('input', () => { show.textContent = fmt ? fmt(el.value) : el.value; });
+};
+bind('size', 'size-val');
+bind('nail-step', 'step-val');
+bind('iterations', 'iter-val');
+bind('strength', 'strength-val', v => parseFloat(v).toFixed(2));
+bind('rand-nails', 'rand-val');
+
+// ══════════════════════════════════════════════════════
+//  UPLOAD
+// ══════════════════════════════════════════════════════
+const uploadArea = document.getElementById('upload-area');
+const fileInput  = document.getElementById('file-input');
+
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadArea.classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => loadImageFromURL(e.target.result);
+  reader.readAsDataURL(file);
+}
+
+function loadImageFromURL(url) {
+  const img = new Image();
+  img.onload = () => {
+    // Show thumbnail
+    const thumb = document.getElementById('thumb-preview');
+    thumb.src = url;
+    thumb.style.display = 'block';
+    // Store image data in internal canvas
+    const sz = 400;
+    const ic = document.createElement('canvas');
+    ic.width = ic.height = sz;
+    const ctx = ic.getContext('2d');
+    // Crop to square
+    const s = Math.min(img.width, img.height);
+    const ox = (img.width - s) / 2, oy = (img.height - s) / 2;
+    ctx.drawImage(img, ox, oy, s, s, 0, 0, sz, sz);
+    sourceImageData = ctx.getImageData(0, 0, sz, sz);
+    setStatus('IMAGE LOADED', false);
+  };
+  img.src = url;
+}
+
+// ══════════════════════════════════════════════════════
+//  DEMO IMAGES — drawn procedurally on canvas
+// ══════════════════════════════════════════════════════
+function loadDemo(type) {
+  const sz = 400;
+  const ic = document.createElement('canvas');
+  ic.width = ic.height = sz;
+  const ctx = ic.getContext('2d');
+
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, sz, sz);
+
+  if (type === 'face') {
+    ctx.fillStyle = '#000';
+    // head
+    ctx.beginPath(); ctx.arc(200,200,160,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(200,200,140,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#000';
+    // eyes
+    ctx.beginPath(); ctx.ellipse(155,170,22,14,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(245,170,22,14,0,0,Math.PI*2); ctx.fill();
+    // nose
+    ctx.beginPath(); ctx.moveTo(200,185); ctx.lineTo(185,230); ctx.lineTo(215,230); ctx.closePath(); ctx.fill();
+    // mouth
+    ctx.beginPath(); ctx.arc(200,245,30,0.1*Math.PI,0.9*Math.PI); ctx.lineWidth=8; ctx.strokeStyle='#000'; ctx.stroke();
+
+  } else if (type === 'portrait') {
+    // Simple silhouette
+    ctx.fillStyle = '#222';
+    ctx.beginPath();
+    ctx.arc(200, 150, 80, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(200, 340, 130, 180, 0, -0.4*Math.PI, -0.6*Math.PI, true);
+    ctx.fill();
+
+  } else if (type === 'eye') {
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.ellipse(200, 200, 180, 90, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.ellipse(200, 200, 155, 70, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.arc(200,200,60,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(215,185,18,0,Math.PI*2); ctx.fill();
+
+  } else if (type === 'circle') {
+    // Concentric circles pattern
+    for (let r = 180; r > 10; r -= 22) {
+      ctx.beginPath();
+      ctx.arc(200, 200, r, 0, Math.PI*2);
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = r > 100 ? 10 : 6;
+      ctx.stroke();
+    }
+
+  } else if (type === 'star') {
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const a1 = (i * 4 * Math.PI / 5) - Math.PI / 2;
+      const a2 = ((i * 4 + 2) * Math.PI / 5) - Math.PI / 2;
+      if (i === 0) ctx.moveTo(200 + 170 * Math.cos(a1), 200 + 170 * Math.sin(a1));
+      else ctx.lineTo(200 + 170 * Math.cos(a1), 200 + 170 * Math.sin(a1));
+      ctx.lineTo(200 + 70 * Math.cos(a2), 200 + 70 * Math.sin(a2));
+    }
+    ctx.closePath(); ctx.fill();
+
+  } else if (type === 'text') {
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 120px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SA', 200, 180);
+    ctx.font = 'bold 60px serif';
+    ctx.fillText('ART', 200, 310);
+  }
+
+  sourceImageData = ctx.getImageData(0, 0, sz, sz);
+  const thumb = document.getElementById('thumb-preview');
+  thumb.src = ic.toDataURL();
+  thumb.style.display = 'block';
+  setStatus('DEMO LOADED — ' + type.toUpperCase(), false);
+}
+
+// ══════════════════════════════════════════════════════
+//  NAIL POSITIONS
+// ══════════════════════════════════════════════════════
+const NUM_NAILS = 240;
+
+function getNails(size, _step, shapeType) {
+  const nails = [];
+  const count = NUM_NAILS;
+  if (shapeType === 'circle') {
+    const r = size / 2 - 1;
+    const cx = size / 2, cy = size / 2;
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2 - Math.PI;
+      nails.push([Math.round(cx + r * Math.cos(angle)), Math.round(cy + r * Math.sin(angle))]);
+    }
+  } else {
+    const margin = 4;
+    const s = size - margin * 2;
+    const perimeter = s * 4;
+    for (let i = 0; i < count; i++) {
+      const d = (i / count) * perimeter;
+      let x, y;
+      if (d < s) { x = margin + d; y = margin; }
+      else if (d < 2*s) { x = size - margin; y = margin + d - s; }
+      else if (d < 3*s) { x = size - margin - (d - 2*s); y = size - margin; }
+      else { x = margin; y = size - margin - (d - 3*s); }
+      nails.push([Math.round(x), Math.round(y)]);
+    }
+  }
+  return nails;
+}
+
+// ══════════════════════════════════════════════════════
+//  BRESENHAM LINE PIXELS
+// ══════════════════════════════════════════════════════
+function linePixels(x0, y0, x1, y1, size) {
+  const pts = [];
+  let dx = Math.abs(x1-x0), dy = Math.abs(y1-y0);
+  let sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+  while (true) {
+    if (x0 >= 0 && x0 < size && y0 >= 0 && y0 < size) pts.push(y0 * size + x0);
+    if (x0 === x1 && y0 === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; x0 += sx; }
+    if (e2 < dx) { err += dx; y0 += sy; }
+  }
+  return pts;
+}
+
+// ══════════════════════════════════════════════════════
+//  MAIN ALGORITHM
+// ══════════════════════════════════════════════════════
+async function runAlgorithm() {
+  if (!sourceImageData) { alert('Please upload or select a demo image first.'); return; }
+  if (running) return;
+
+  running = true; stopFlag = false;
+  document.getElementById('btn-run').disabled = true;
+  document.getElementById('btn-stop').disabled = false;
+  document.getElementById('btn-download').disabled = true;
+  document.getElementById('placeholder').style.display = 'none';
+  document.getElementById('canvas-wrapper').style.display = 'inline-block';
+  document.getElementById('loading-ring').style.display = 'block';
+  document.getElementById('nail-order-wrap').style.display = 'none';
+  setStatus('RUNNING', true);
+
+  const size    = parseInt(document.getElementById('size').value);
+  const nStep   = parseInt(document.getElementById('nail-step').value);
+  const maxIter = parseInt(document.getElementById('iterations').value);
+  const strength = parseFloat(document.getElementById('strength').value);
+  const randN   = parseInt(document.getElementById('rand-nails').value);
+  const isRGB   = mode === 'rgb';
+  const isWB    = mode === 'wb';
+
+  const startTime = Date.now();
+
+  // ── HIGH-RES INTERNAL RESOLUTION ──
+  // Algorithm runs at SCALE× internally for razor-sharp lines,
+  // then the canvas CSS size stays at `size` px.
+  const SCALE = 3;
+  const hiSize = size * SCALE;
+
+  // Prepare reference image at hi-res
+  const refCanvas = document.createElement('canvas');
+  refCanvas.width = refCanvas.height = hiSize;
+  const rctx = refCanvas.getContext('2d');
+  const srcCv = document.createElement('canvas');
+  srcCv.width = srcCv.height = 400;
+  srcCv.getContext('2d').putImageData(sourceImageData, 0, 0);
+  rctx.drawImage(srcCv, 0, 0, hiSize, hiSize);
+  const ref = rctx.getImageData(0, 0, hiSize, hiSize).data;
+
+  // Error buffers at hi-res
+  const N = hiSize * hiSize;
+  let errR = new Float32Array(N);
+  let errG = new Float32Array(N);
+  let errB = new Float32Array(N);
+
+  if (isRGB) {
+    for (let i = 0; i < N; i++) {
+      errR[i] = 1 - ref[i*4]   / 255;
+      errG[i] = 1 - ref[i*4+1] / 255;
+      errB[i] = 1 - ref[i*4+2] / 255;
+    }
+  } else {
+    for (let i = 0; i < N; i++) {
+      const lum = (0.299*ref[i*4] + 0.587*ref[i*4+1] + 0.114*ref[i*4+2]) / 255;
+      errR[i] = isWB ? lum : 1 - lum;
+    }
+    errG = errR; errB = errR;
+  }
+
+  // Output canvas — physical pixels = hiSize, CSS size = size (sharp on all screens)
+  const canvas = document.getElementById('output-canvas');
+  canvas.width  = hiSize;
+  canvas.height = hiSize;
+  canvas.style.width  = size + 'px';
+  canvas.style.height = size + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = isWB ? '#000' : '#fff';
+  ctx.fillRect(0, 0, hiSize, hiSize);
+
+  // Nails scaled to hi-res
+  const nailsLo = getNails(size, nStep, layout);      // logical coords
+  const nails   = nailsLo.map(([x,y]) => [x*SCALE, y*SCALE]); // hi-res coords
+  const numNails = nails.length;
+  document.getElementById('stat-nails').textContent = numNails;
+
+  const MIN_LINE = 10 * SCALE;
+  const sAlpha = strength;
+
+  nailOrder = [];
+  let currentNail = 0;
+  let itersDone = 0;
+  const RENDER_BATCH = 40;
+
+  function pickBestNail(fromNail) {
+    const [fx, fy] = nails[fromNail];
+    let bestScore = -Infinity;
+    let bestNail = -1;
+
+    const candidates = randN > 0
+      ? Array.from({length: randN}, () => Math.floor(Math.random() * numNails))
+      : Array.from({length: numNails}, (_,i) => i);
+
+    for (const j of candidates) {
+      if (j === fromNail) continue;
+      const [tx, ty] = nails[j];
+      const pts = linePixels(fx, fy, tx, ty, hiSize);
+      if (pts.length < MIN_LINE) continue;
+
+      let score = 0;
+      if (isRGB) {
+        for (const p of pts) score += errR[p] + errG[p] + errB[p];
+      } else {
+        for (const p of pts) score += errR[p];
+      }
+      score /= pts.length;
+
+      if (score > bestScore) { bestScore = score; bestNail = j; }
+    }
+    return { nail: bestNail, score: bestScore };
+  }
+
+  function applyString(fromNail, toNail) {
+    const [fx, fy] = nails[fromNail];
+    const [tx, ty] = nails[toNail];
+    const pts = linePixels(fx, fy, tx, ty, hiSize);
+
+    for (const p of pts) {
+      if (isRGB) {
+        errR[p] = Math.max(0, errR[p] - sAlpha);
+        errG[p] = Math.max(0, errG[p] - sAlpha);
+        errB[p] = Math.max(0, errB[p] - sAlpha);
+      } else {
+        errR[p] = Math.max(0, errR[p] - sAlpha);
+      }
+    }
+
+    // Draw at hi-res with hair-thin lines
+    ctx.beginPath();
+    ctx.moveTo(fx, fy);
+    ctx.lineTo(tx, ty);
+    if (isRGB) ctx.strokeStyle = `rgba(0,0,180,${sAlpha * 0.7})`;
+    else if (isWB) ctx.strokeStyle = `rgba(255,255,255,${sAlpha})`;
+    else ctx.strokeStyle = `rgba(10,10,10,${sAlpha})`;
+    ctx.lineWidth = 0.85;   // 0.85px on 3× canvas ≈ 0.28px visual — razor sharp
+    ctx.stroke();
+  }
+
+  // Nail dots — tiny at hi-res
+  function drawNails() {
+    ctx.fillStyle = isWB ? 'rgba(255,220,0,0.6)' : 'rgba(180,80,0,0.5)';
+    for (const [nx, ny] of nails) {
+      ctx.beginPath(); ctx.arc(nx, ny, 1.5, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  drawNails();
+
+  // ── MAIN LOOP (chunked with setTimeout) ──
+  function runChunk() {
+    if (stopFlag || itersDone >= maxIter) {
+      finish();
+      return;
+    }
+
+    const chunkEnd = Math.min(itersDone + RENDER_BATCH, maxIter);
+    for (let i = itersDone; i < chunkEnd; i++) {
+      const { nail, score } = pickBestNail(currentNail);
+      if (nail < 0 || score <= 0) { itersDone = maxIter; break; } // no improvement
+      applyString(currentNail, nail);
+      nailOrder.push(nail);
+      currentNail = nail;
+      itersDone++;
+    }
+
+    // Update UI
+    const pct = (itersDone / maxIter * 100).toFixed(0);
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('stat-strings').textContent = itersDone;
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    document.getElementById('stat-time').textContent = elapsed + 's';
+
+    setTimeout(runChunk, 0);
+  }
+
+  function finish() {
+    running = false;
+    document.getElementById('loading-ring').style.display = 'none';
+    document.getElementById('btn-run').disabled = false;
+    document.getElementById('btn-stop').disabled = true;
+    document.getElementById('btn-download').disabled = false;
+    document.getElementById('stat-status').textContent = stopFlag ? 'STOPPED' : 'DONE';
+    setStatus(stopFlag ? 'STOPPED' : 'COMPLETE', false);
+    document.getElementById('progress-bar').style.width = '100%';
+
+    // Show nail order
+    if (!isRGB && nailOrder.length > 0) {
+      document.getElementById('nail-order-wrap').style.display = 'block';
+      const box = document.getElementById('nail-order-box');
+      box.style.display = 'block';
+      box.textContent = '0 → ' + nailOrder.join(' → ');
+    }
+  }
+
+  setTimeout(runChunk, 10);
+}
+
+function stopAlgorithm() {
+  stopFlag = true;
+}
+
+function downloadResult() {
+  const canvas = document.getElementById('output-canvas');
+  const a = document.createElement('a');
+  a.download = 'string-art.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+function setMode(m) {
+  mode = m;
+  ['bw','wb','rgb'].forEach(id => {
+    document.getElementById('mode-'+id).classList.toggle('active', id === m);
+  });
+}
+
+function setLayout(l) {
+  layout = l;
+  ['circle','rect'].forEach(id => {
+    document.getElementById('layout-'+id).classList.toggle('active', id === l);
+  });
+}
+
+function setStatus(text, active) {
+  document.getElementById('status-text').textContent = text;
+  document.getElementById('status-dot').classList.toggle('active', active);
+  document.getElementById('stat-status').textContent = active ? 'RUNNING' : text.split(' ')[0];
+}
+</script>
+</body>
+</html>

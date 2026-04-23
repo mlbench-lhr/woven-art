@@ -37,6 +37,21 @@ export function createOriginalSequenceFromMirrored(mirroredSequence: number[], t
   return original;
 }
 
+/**
+ * Converts a sequence from storage pin count to display pin count for high-quality visualization
+ * Maps 240-pin indices to 480-pin indices by doubling the angle
+ */
+export function convertStorageToDisplaySequence(storageSequence: number[], storagePins: number, displayPins: number): number[] {
+  if (storagePins === displayPins) return storageSequence;
+  
+  return storageSequence.map(pin => {
+    // Convert storage pin to angle, then to display pin
+    const angle = (pin / storagePins) * 2 * Math.PI;
+    const displayPin = Math.round((angle / (2 * Math.PI)) * displayPins) % displayPins;
+    return displayPin;
+  });
+}
+
 export async function generateStringArt({
   imageData,
   totalPins = 240,

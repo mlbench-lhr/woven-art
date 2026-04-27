@@ -319,15 +319,15 @@ export default function GuidedCreatePage() {
         if (playTokenRef.current !== token) break;
 
         // Custom pause based on speed setting
-        let pauseMs = 1500; // Default for 3x
+        let pauseMs = 1500; // Default for 2x
         if (speedRef.current <= 0.25) {
           pauseMs = 8000;
         } else if (speedRef.current <= 0.5) {
           pauseMs = 6000;
         } else if (speedRef.current <= 1) {
           pauseMs = 4000;
-        } else if (speedRef.current <= 2) {
-          pauseMs = 2500;
+        } else if (speedRef.current <= 1.5) {
+          pauseMs = 3250;
         }
 
         await new Promise((r) => setTimeout(r, pauseMs));
@@ -450,22 +450,22 @@ export default function GuidedCreatePage() {
                           <span>Speed</span>
                         </div>
                         <span className="text-gray-600">
-                          {speed === 0.25 ? "0.25x" : speed === 0.5 ? "0.5x" : speed === 1 ? "1x" : speed === 2 ? "2x" : "3x"}
+                          {speed === 0.25 ? "0.25x" : speed === 0.5 ? "0.5x" : speed === 1 ? "1x" : speed === 1.5 ? "1.5x" : "2x"}
                         </span>
                       </div>
                       <Slider
                         className="[&_[data-slot=slider-track]]:bg-[#E5E7EB] [&_[data-slot=slider-range]]:bg-[#C5B4A3] [&_[data-slot=slider-thumb]]:border-[#C5B4A3] [&_[data-slot=slider-thumb]]:size-3.5"
-                        value={[speed === 0.25 ? 0 : speed === 0.5 ? 25 : speed === 1 ? 50 : speed === 2 ? 75 : 100]}
+                        value={[speed === 0.25 ? 0 : speed === 0.5 ? 20 : speed === 1 ? 40 : speed === 1.5 ? 60 : 100]}
                         min={0}
                         max={100}
-                        step={25}
+                        step={20}
                         onValueChange={(v) => {
-                          const val = v[0] ?? 50;
+                          const val = v[0] ?? 40;
                           if (val === 0) setSpeed(0.25);
-                          else if (val === 25) setSpeed(0.5);
-                          else if (val === 50) setSpeed(1);
-                          else if (val === 75) setSpeed(2);
-                          else setSpeed(3);
+                          else if (val === 20) setSpeed(0.5);
+                          else if (val === 40) setSpeed(1);
+                          else if (val === 60) setSpeed(1.5);
+                          else setSpeed(2);
                         }}
                       />
                     </div>
@@ -743,8 +743,8 @@ function GuidedCanvas({
     for (let ci = 0; ci < COLOR_ORDER.length; ci++) {
       const startIdx = (totalPins / COLOR_ORDER.length) * ci;
       const endIdx = (totalPins / COLOR_ORDER.length) * (ci + 1);
-      const startAngle = (-Math.PI / 2) + (2 * Math.PI * startIdx) / totalPins;
-      const endAngle = (-Math.PI / 2) + (2 * Math.PI * endIdx) / totalPins;
+      const startAngle = (2 * Math.PI * startIdx) / totalPins;
+      const endAngle = (2 * Math.PI * endIdx) / totalPins;
       ctx.beginPath();
       ctx.strokeStyle = COLOR_HEX[COLOR_ORDER[ci]];
       ctx.arc(cx, cy, radius, startAngle, endAngle);
@@ -772,7 +772,7 @@ function GuidedCanvas({
 
     ctx.lineWidth = 2;
     for (let i = 0; i < totalPins; i++) {
-      const angle = (2 * Math.PI * i) / totalPins - Math.PI / 2;
+      const angle = (2 * Math.PI * i) / totalPins;
       const meta = mapPinIndex(i);
       ctx.strokeStyle = meta.hex;
       const x1 = cx + (radius - ringWidth / 2) * Math.cos(angle);

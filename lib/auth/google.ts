@@ -16,18 +16,37 @@ interface GoogleUserInfo {
   picture: string;
 }
 
+interface GoogleTokenErrorResponse {
+  error?: string;
+  error_description?: string;
+}
+
 export class GoogleOAuth {
   private clientId: string;
   private clientSecret: string;
   private redirectUri: string;
 
-  constructor() {
-    this.clientId = process.env.GOOGLE_ID!;
-    this.clientSecret = process.env.GOOGLE_SECRET!;
-    this.redirectUri = `${process.env.GOOGLE_REDIRECT_URL}/api/auth/google/callback`;
+  constructor(options?: { redirectBase?: string }) {
+    this.clientId = process.env.GOOGLE_ID || "";
+    this.clientSecret = process.env.GOOGLE_SECRET || "";
+
+    const callbackPath = "/api/auth/google/callback";
+    const redirectBase =
+      options?.redirectBase ||
+      process.env.GOOGLE_REDIRECT_URL ||
+      process.env.NEXTAUTH_URL ||
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      "";
+    const normalizedRedirectBase = redirectBase.replace(/\/$/, "");
+    this.redirectUri = normalizedRedirectBase.endsWith(callbackPath)
+      ? normalizedRedirectBase
+      : `${normalizedRedirectBase}${callbackPath}`;
 
     if (!this.clientId || !this.clientSecret) {
       throw new Error("Google OAuth credentials not configured");
+    }
+    if (!normalizedRedirectBase) {
+      throw new Error("Google OAuth redirect URL not configured");
     }
   }
 
@@ -48,6 +67,7 @@ export class GoogleOAuth {
     const response = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: {
+        Accept: "application/json",
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
@@ -60,7 +80,19 @@ export class GoogleOAuth {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to exchange code for tokens");
+      const raw = await response.text().catch(() => "");
+      let detail = "";
+      try {
+        const parsed = JSON.parse(raw) as GoogleTokenErrorResponse;
+        const parts = [parsed.error, parsed.error_description].filter(Boolean);
+        detail = parts.join(": ");
+      } catch {
+        detail = raw.trim();
+      }
+      const suffix = detail ? `: ${detail}` : "";
+      throw new Error(
+        `Failed to exchange code for tokens (${response.status})${suffix}`
+      );
     }
 
     return response.json();

@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { FastForward, Pause, Play, RotateCcw, Settings, Volume2 } from "lucide-react";
 import { mapIndexToColor } from "@/lib/mappers";
+import { rotateSequenceBy90Degrees, createMirroredSequence } from "@/lib/stringArtGenerator";
 import CongratulationsModal from "@/components/SmallComponents/CongratulationsModal";
 
 type ColorName = "Green" | "Yellow" | "Red" | "Blue";
@@ -209,7 +210,15 @@ export default function GuidedCreatePage() {
     save();
   }, [artId, step, serverSequence, isInitialized]);
 
-  const activeSequence = artId && serverSequence ? serverSequence : (variant?.sequence || []);
+  const baseSequence = artId && serverSequence ? serverSequence : (variant?.sequence || []);
+// For wall hanging display, use original sequence (not mirrored)
+// For stringing from back, apply mirroring
+const mirroredSequence = baseSequence.map((pin, i) => {
+  // Mirror the pin index across the vertical axis (skip first pin)
+  if (i === 0) return pin;
+  return (totalPins - pin) % totalPins;
+});
+const activeSequence = rotateSequenceBy90Degrees(mirroredSequence, totalPins);
   const maxStep = Math.max(1, activeSequence.length - 1);
   const displayStep = Math.min(step, maxStep);
   const prevPin = activeSequence.length ? activeSequence[Math.max(0, displayStep - 1)] : 0;
@@ -743,8 +752,8 @@ function GuidedCanvas({
     for (let ci = 0; ci < COLOR_ORDER.length; ci++) {
       const startIdx = (totalPins / COLOR_ORDER.length) * ci;
       const endIdx = (totalPins / COLOR_ORDER.length) * (ci + 1);
-      const startAngle = (2 * Math.PI * startIdx) / totalPins;
-      const endAngle = (2 * Math.PI * endIdx) / totalPins;
+      const startAngle = (-Math.PI / 2) + (2 * Math.PI * startIdx) / totalPins;
+      const endAngle = (-Math.PI / 2) + (2 * Math.PI * endIdx) / totalPins;
       ctx.beginPath();
       ctx.strokeStyle = COLOR_HEX[COLOR_ORDER[ci]];
       ctx.arc(cx, cy, radius, startAngle, endAngle);
@@ -772,7 +781,7 @@ function GuidedCanvas({
 
     ctx.lineWidth = 2;
     for (let i = 0; i < totalPins; i++) {
-      const angle = (2 * Math.PI * i) / totalPins;
+      const angle = (2 * Math.PI * i) / totalPins - Math.PI / 2;
       const meta = mapPinIndex(i);
       ctx.strokeStyle = meta.hex;
       const x1 = cx + (radius - ringWidth / 2) * Math.cos(angle);

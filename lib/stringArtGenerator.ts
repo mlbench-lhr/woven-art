@@ -52,6 +52,18 @@ export function convertStorageToDisplaySequence(storageSequence: number[], stora
   });
 }
 
+/**
+ * Rotates a sequence by 90 degrees clockwise
+ * Used to rotate the string art instructions for proper alignment
+ */
+export function rotateSequenceBy90Degrees(sequence: number[], totalPins: number): number[] {
+  const quarterPins = totalPins / 4;
+  return sequence.map(pin => {
+    // Rotate pin by quarter of total pins (90 degrees clockwise)
+    return (pin + quarterPins) % totalPins;
+  });
+}
+
 export async function generateStringArt({
   imageData,
   totalPins = 240,

@@ -11,7 +11,7 @@ export async function GET() {
   } catch (error: any) {
     console.error("Google OAuth initiation error:", error);
     return NextResponse.redirect(
-      `${"http://localhost:3000"}/auth/login?error=oauth_error`
+      `${process.env.NEXT_PUBLIC_BASE_URL}/auth/login?error=oauth_error`
     );
   }
 }

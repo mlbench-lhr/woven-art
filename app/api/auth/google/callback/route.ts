@@ -27,7 +27,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${baseUrl}/auth/login?error=oauth_error`);
     }
 
-    const googleOAuth = new GoogleOAuth();
+    const redirectBase =
+      process.env.NODE_ENV === "production"
+        ? process.env.GOOGLE_REDIRECT_URL || request.nextUrl.origin
+        : request.nextUrl.origin;
+    const googleOAuth = new GoogleOAuth({ redirectBase });
 
     // Exchange code for tokens
     const tokens = await googleOAuth.exchangeCodeForTokens(code);

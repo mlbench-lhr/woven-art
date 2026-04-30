@@ -1,17 +1,22 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { GoogleOAuth } from "@/lib/auth/google";
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const googleOAuth = new GoogleOAuth();
+    const redirectBase =
+      process.env.NODE_ENV === "production"
+        ? process.env.GOOGLE_REDIRECT_URL || request.nextUrl.origin
+        : request.nextUrl.origin;
+    const googleOAuth = new GoogleOAuth({ redirectBase });
     const authUrl = googleOAuth.getAuthUrl();
 
     return NextResponse.redirect(authUrl);
   } catch (error: any) {
     console.error("Google OAuth initiation error:", error);
+    const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/auth/login?error=oauth_error`
+      `${baseUrl}/auth/login?error=oauth_error`
     );
   }
 }

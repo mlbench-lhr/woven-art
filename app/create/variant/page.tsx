@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import ProgressiveStringPreview from "@/components/ProgressiveStringPreview";
 import { useVariants } from "@/app/Context/VariantsContext";
 import { useRouter } from "next/navigation";
+import WovenArtKitModal from "@/components/SmallComponents/WovenArtKitModal";
 
 export default function SelectVariantPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function SelectVariantPage() {
   const [generating, setGenerating] = useState(false);
   const generatingRef = useRef(false);
   const hasGeneratedOnce = useRef(false);
+  const [showKitModal, setShowKitModal] = useState(false);
 
   useEffect(() => {
     if (variants.length > 0 && !selected) setSelected(variants[0].id);
@@ -36,6 +38,24 @@ export default function SelectVariantPage() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const handleCreateArtwork = () => {
+    setShowKitModal(true);
+  };
+
+  const handleHaveKit = () => {
+    setShowKitModal(false);
+    try {
+      if (selected) sessionStorage.setItem("selectedVariantId", selected);
+    } catch { }
+    router.push(`/create/artwork?variant=${encodeURIComponent(selected || "")}`);
+  };
+
+  const handleShopKit = () => {
+    setShowKitModal(false);
+    // Navigate to the Shop Woven-Art kit page (opens in new tab)
+    window.open("https://wovenart.store/products/woven-art?variant=53231967076616", "_blank");
+  };
 
   useEffect(() => {
     if (generatingRef.current) return;
@@ -168,17 +188,35 @@ export default function SelectVariantPage() {
           {current && (
             <div className="mt-10 w-full flex justify-center">
               <div
-                className="relative bg-white rounded-full shadow-lg border border-gray-100 overflow-hidden"
-                style={{ width: canvasSize, height: canvasSize }}
+                className="relative bg-white rounded-full overflow-hidden"
+                style={{ 
+                  width: "360px", 
+                  height:"360px"
+                }}
               >
-                <ProgressiveStringPreview
-                  sequence={current.sequence}
-                  totalPins={480}
-                  size={canvasSize}
-                  strokeColor="rgba(10,10,10,0.22)"
-                  strokeWidth={0.85}
-                  progressLen={currentProgress}
+                {/* Wooden raster background */}
+                <div 
+                  className="absolute inset-0 rounded-full overflow-hidden z-1"
+                  style={{
+                    backgroundImage: 'url("/wooden-raster.png")',
+                    backgroundSize: '120% 120%',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                  }}
                 />
+                {/* Canvas on top */}
+                <div
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <ProgressiveStringPreview
+                    sequence={current.sequence}
+                    totalPins={480}
+                    size={canvasSize *0.95}
+                    strokeColor="rgba(10,10,10,0.22)"
+                    strokeWidth={0.85}
+                    progressLen={currentProgress}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -204,12 +242,7 @@ export default function SelectVariantPage() {
             </Button>
             <Button
               className="opp-button-4"
-              onClick={() => {
-                try {
-                  if (selected) sessionStorage.setItem("selectedVariantId", selected);
-                } catch { }
-                router.push(`/create/artwork?variant=${encodeURIComponent(selected || "")}`);
-              }}
+              onClick={handleCreateArtwork}
               disabled={!selected || generating}
             >
               {generating ? "Generating..." : "Create Artwork"}
@@ -218,6 +251,13 @@ export default function SelectVariantPage() {
         </div>
       </main>
       <Footer />
+      
+      <WovenArtKitModal
+        open={showKitModal}
+        onClose={() => setShowKitModal(false)}
+        onHaveKit={handleHaveKit}
+        onShopKit={handleShopKit}
+      />
     </div>
   );
 }

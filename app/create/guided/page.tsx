@@ -17,6 +17,8 @@ import { FastForward, Pause, Play, RotateCcw, Settings, Volume2 } from "lucide-r
 import { mapIndexToColor } from "@/lib/mappers";
 import { rotateSequenceBy90Degrees, createMirroredSequence } from "@/lib/stringArtGenerator";
 import CongratulationsModal from "@/components/SmallComponents/CongratulationsModal";
+import StringingTensionModal from "@/components/SmallComponents/StringingTensionModal";
+import ResetInstructionsModal from "@/components/SmallComponents/ResetInstructionsModal";
 
 type ColorName = "Green" | "Yellow" | "Red" | "Blue";
 
@@ -178,6 +180,9 @@ export default function GuidedCreatePage() {
     { label: "Second Last Pin", color: "", pin: "" },
     { label: "Third Last Pin", color: "", pin: "" },
   ]);
+  const [showTensionModal, setShowTensionModal] = useState(false);
+  const [tensionModalShown, setTensionModalShown] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
 
   useEffect(() => {
     if (artId) {
@@ -209,6 +214,14 @@ export default function GuidedCreatePage() {
     };
     save();
   }, [artId, step, serverSequence, isInitialized]);
+
+  // Show tension modal when reaching step 100
+  useEffect(() => {
+    if (step === 100 && !tensionModalShown) {
+      setShowTensionModal(true);
+      setTensionModalShown(true);
+    }
+  }, [step, tensionModalShown]);
 
   const baseSequence = artId && serverSequence ? serverSequence : (variant?.sequence || []);
 // For wall hanging display, use original sequence (not mirrored)
@@ -400,6 +413,19 @@ const activeSequence = rotateSequenceBy90Degrees(mirroredSequence, totalPins);
         open={showCongratulationsModal}
         onClose={() => setShowCongratulationsModal(false)}
       />
+      <StringingTensionModal
+        open={showTensionModal}
+        onClose={() => setShowTensionModal(false)}
+      />
+      <ResetInstructionsModal
+        open={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        onConfirm={() => {
+          stopPlayback();
+          setStep(1);
+          setShowResetModal(false);
+        }}
+      />
       <Navbar />
       <main className="flex-1">
         <div className="max-w-[1000px] mx-auto px-4 py-10">
@@ -483,8 +509,7 @@ const activeSequence = rotateSequenceBy90Degrees(mirroredSequence, totalPins);
                       type="button"
                       className="w-full flex items-center gap-2 text-sm text-red-600 hover:text-red-600"
                       onClick={() => {
-                        stopPlayback();
-                        setStep(1);
+                        setShowResetModal(true);
                       }}
                     >
                       <RotateCcw className="size-4" />

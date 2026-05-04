@@ -6,11 +6,10 @@
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
     "predev": "npm run clean",
     "prebuild": "npm run clean",
-    "prestart": "npm run build",
     "lint": "next lint",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "node .next/standalone/server.js"
   },
   "dependencies": {
     "@fullcalendar/daygrid": "^6.1.19",
